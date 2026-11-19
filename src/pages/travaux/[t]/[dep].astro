@@ -1,0 +1,18 @@
+---
+import Base from "../../../layouts/Base.astro";
+import { renderTravauxDep, seo } from "../../../lib/core.js";
+import { load, entOf, TRAVAUX, MIN_INDEX } from "../../../lib/data.js";
+
+export function getStaticPaths() {
+  const { deps } = load();
+  return TRAVAUX.flatMap((t) => Object.values(deps).filter((d) => d.tv[t.slug]).map((d) => ({ params: { t: t.slug, dep: d.slug }, props: { t, code: d.code } })));
+}
+const { t, code } = Astro.props;
+const s = load();
+const d = s.deps[code];
+const es = entOf(d.tv[t.slug]);
+const m = seo("travauxDep", { t, d, n: es.length });
+---
+<Base title={m.title} description={m.desc} page="travaux" noindex={es.length < MIN_INDEX}>
+  <Fragment set:html={renderTravauxDep({ t, d, es })} />
+</Base>

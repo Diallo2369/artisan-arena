@@ -1,0 +1,18 @@
+---
+import Base from "../../layouts/Base.astro";
+import { CONTACT, ANALYTICS_TOKEN } from "../../lib/site.js";
+---
+<Base title="Confidentialité" description="Artisan Arena ne demande aucune inscription et ne conserve aucune donnée sur ses visiteurs." page="legal">
+  <section class="band"><div class="wrap"><h1>Confidentialité</h1><p class="lede">En bref : aucune inscription, aucune donnée personnelle conservée sur les visiteurs, aucun cookie.</p></div></section>
+  <section class="block"><div class="wrap"><div class="prose">
+    <h2>Les visiteurs</h2>
+    <p>Artisan Arena ne demande ni inscription, ni adresse e-mail. La recherche se fait entièrement dans votre navigateur, à partir d'un fichier public téléchargé depuis ce site. Le site n'utilise aucun cookie{ANALYTICS_TOKEN ? " et aucun outil de publicité." : " et aucun outil de mesure d'audience ou de publicité."}</p>
+    {ANALYTICS_TOKEN && <><h2>Mesure d'audience</h2><p>Pour savoir combien de personnes consultent le site et quelles pages sont utiles, nous utilisons Cloudflare Web Analytics. Cet outil ne dépose aucun cookie, ne stocke rien sur votre appareil et ne vous suit pas d'un site à l'autre : il compte les pages vues de façon agrégée, sans permettre de vous identifier.</p></>}
+    <h2>Les entreprises et les entrepreneurs</h2>
+    <p>Les fiches reprennent des informations publiées par l'administration : la liste RGE de l'ADEME, les annonces du BODACC, le répertoire Sirene et les comptes publiés à l'INPI. Certaines concernent des entrepreneurs individuels, dont le nom est souvent celui de l'entreprise. Ces informations sont réutilisées dans un but d'information des consommateurs avant la signature d'un devis.</p>
+    <p>Les pages des entrepreneurs individuels qui ont demandé à ne pas diffuser leurs informations au répertoire Sirene portent la mention « noindex » et ne sont pas proposées aux moteurs de recherche. Les adresses e-mail figurant dans la liste RGE ne sont pas reprises.</p>
+    <p>Pour faire rectifier une information, adressez-vous à la source : l'organisme de qualification pour une qualification, le greffe du tribunal pour une annonce du BODACC, l'INSEE pour le répertoire Sirene. Pour toute autre demande, notamment d'opposition : <span class="sel">{CONTACT}</span>. Vous pouvez aussi saisir la CNIL (cnil.fr).</p>
+    <h2>Données techniques</h2>
+    <p>Comme tout site web, l'hébergeur (GitHub Pages) reçoit l'adresse IP de votre appareil pour vous envoyer les pages et protéger le service. Les polices de caractères sont hébergées sur ce site.</p>
+  </div></div></section>
+</Base>

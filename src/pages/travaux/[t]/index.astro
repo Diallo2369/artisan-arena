@@ -1,0 +1,18 @@
+---
+import Base from "../../../layouts/Base.astro";
+import { renderTravaux, seo } from "../../../lib/core.js";
+import { load, TRAVAUX } from "../../../lib/data.js";
+
+export function getStaticPaths() {
+  const { nat } = load();
+  return TRAVAUX.filter((t) => nat.tc[t.slug]).map((t) => ({ params: { t: t.slug }, props: { t } }));
+}
+const { t } = Astro.props;
+const s = load();
+const deps = Object.values(s.deps).filter((d) => d.tc[t.slug]).sort((a, b) => a.code.localeCompare(b.code));
+const n = s.nat.tc[t.slug];
+const m = seo("travaux", { t, n });
+---
+<Base title={m.title} description={m.desc} page="travaux">
+  <Fragment set:html={renderTravaux({ t, deps, n })} />
+</Base>

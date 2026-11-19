@@ -1,0 +1,10 @@
+---
+import Base from "../../layouts/Base.astro";
+import { renderAbout } from "../../lib/core.js";
+import { load } from "../../lib/data.js";
+import { CONTACT } from "../../lib/site.js";
+const s = load();
+---
+<Base title="À propos" description="Pourquoi Artisan Arena, d'où viennent les qualifications RGE, les procédures collectives et les comptes, et comment les vérifications sont faites." page="about">
+  <Fragment set:html={renderAbout({ contact: CONTACT, nat: s.nat, meta: s.meta })} />
+</Base>
