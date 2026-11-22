@@ -1,7 +1,8 @@
 ---
 import Base from "../../layouts/Base.astro";
 import { CONTACT } from "../../lib/site.js";
-import { DEVIS } from "../../lib/devis.js";
+import { actifs } from "../../lib/partenaires.js";
+const partenaires = actifs();
 ---
 <Base title="Mentions légales" description="Éditeur, hébergeur et sources des données d'Artisan Arena." page="legal">
   <section class="band"><div class="wrap"><h1>Mentions légales</h1></div></section>
@@ -15,7 +16,7 @@ import { DEVIS } from "../../lib/devis.js";
     <p>Les qualifications proviennent des jeux de données « Liste des entreprises RGE » et « Historique des entreprises RGE depuis 2014 » de l'ADEME. Les procédures collectives proviennent du BODACC (Direction de l'information légale et administrative). Les informations sur les entreprises proviennent du répertoire Sirene de l'INSEE ; les ratios financiers, des comptes annuels publiés par l'INPI. Ces données sont publiques et réutilisées sous Licence Ouverte, sans modification. Les vérifications, leurs couleurs, les classements et les textes explicatifs sont propres à Artisan Arena et décrits sur la page <a href="/a-propos/">À propos</a>.</p>
     <h2>Responsabilité</h2>
     <p>Artisan Arena donne une information générale à partir des dernières données publiées. Une qualification, un jugement ou des comptes peuvent avoir changé depuis leur publication : seuls l'organisme de qualification, le greffe et l'entreprise font foi. L'absence de point de vigilance n'est pas une garantie sur la qualité ou la solidité d'une entreprise. Une erreur ? Écrivez-nous à l'adresse ci-dessus.</p>
-    {DEVIS.enabled && <><h2>Liens partenaires</h2><p>Les blocs marqués « Lien partenaire » renvoient vers {DEVIS.partner}, qui peut rémunérer Artisan Arena pour les demandes de devis transmises. Ils n'influencent ni les vérifications ni l'ordre des entreprises.</p></>}
+    {partenaires.length > 0 && <><h2>Liens partenaires</h2><p>Les encarts marqués « Lien partenaire » renvoient vers des sites partenaires qui peuvent rémunérer Artisan Arena : {partenaires.map(([n, quoi]) => `${n} pour ${quoi}`).join(" ; ")}. Ils n'influencent ni les vérifications ni l'ordre des entreprises.</p></>}
     <h2>Propriété intellectuelle</h2>
     <p>Les textes, la mise en page et les illustrations du site sont protégés. Les données publiques restent librement réutilisables selon leurs conditions de réutilisation.</p>
   </div></div></section>

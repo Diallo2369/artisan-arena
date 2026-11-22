@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import CFG from "./prix.json" with { type: "json" };
 import { esc, monthFr, dateFr } from "./fmt.js";
+import { devisBlock, materiauxBlock } from "./partenaires.js";
 
 const DIR = path.join(process.cwd(), "data/prix");
 const INSEE = "https://www.insee.fr/fr/statistiques/serie/";
@@ -106,7 +107,7 @@ export function renderArticle(snap, { prev, next }) {
   <aside><nav class="toc" aria-label="Sur cette page"><b>Sur cette page</b>${TOC.map((t) => `<a href="#${t[0]}">${t[1]}</a>`).join("")}</nav></aside>
   <article class="doc-main">
     <section id="essentiel"><h2>L'essentiel</h2><ul class="key">${A.key.map((k) => `<li>${k}</li>`).join("")}</ul></section>
-    ${CFG.familles.map((f) => `<section id="${f.slug}"><h2>${f.label}</h2>${table(A.mats.filter((s) => s.famille === f.slug))}</section>`).join("")}
+    ${CFG.familles.map((f) => `<section id="${f.slug}"><h2>${f.label}</h2>${table(A.mats.filter((s) => s.famille === f.slug))}${materiauxBlock(f.slug)}</section>`).join("")}
     <p class="src">Prix de production de l'industrie française pour le marché français, hors TVA, base 100 en 2021. Ce sont les prix de sortie d'usine : le prix en magasin ou sur un devis suit la même tendance, avec un décalage et la marge du distributeur.</p>
     <section id="metiers"><h2>Le coût des travaux par métier</h2>
       <p>Les index du bâtiment (BT) mesurent le coût d'un chantier pour l'entreprise : matériaux, salaires, matériel, transport et énergie. Ce sont eux qu'utilisent les clauses de révision de prix.</p>
@@ -118,7 +119,7 @@ export function renderArticle(snap, { prev, next }) {
         ${ex ? `<li><b>Exemple</b> : avec une clause qui applique entièrement l'index BT50, un devis de 10 000 € signé en ${monthFr(shift(M, -6))} passerait à ${nb(ex.toLocaleString("fr-FR"))} € en ${monthFr(M)}. Beaucoup de clauses n'appliquent l'index qu'à une partie du prix : l'écart réel est alors plus faible.</li>` : ""}
         <li><b>Un devis non signé</b> n'engage que pendant sa durée de validité. Au-delà, l'artisan peut le réactualiser : comparez la hausse demandée avec l'évolution de l'index de son métier sur la même période.</li>
         <li><b>Avant de verser un acompte</b>, vérifiez l'entreprise : qualification RGE, procédures collectives, ancienneté. <a href="/verifier-un-artisan/">Les vérifications à faire</a>.</li>
-      </ul></section>
+      </ul>${devisBlock()}</section>
     <section id="sources"><h2>Sources et méthode</h2>
       <p>Toutes les séries viennent de la banque de données macro-économiques de l'INSEE ; chaque ligne des tableaux renvoie vers sa série. « Depuis 2021 » compare à la moyenne de l'année 2021. Les chiffres de cet article sont figés au ${dateFr(A.fige)} : l'INSEE peut les réviser ensuite, l'article suivant intègre alors les nouvelles valeurs.</p>
       <p>Il n'existe pas de série publique pour certains produits, comme le parquet, la laine de verre ou les pompes à chaleur : pour ces travaux, regardez l'index du métier (plâtrerie, chauffage central).</p></section>
@@ -144,6 +145,7 @@ export function renderPrixHub() {
     <div class="kfs">${fig("Coût des travaux de rénovation sur un an", A.reno, A.reno.y1)}${up[0] ? fig(`${cap(up[0].label)} sur un an`, up[0], up[0].y1) : ""}${up.length > 1 ? fig(`${cap(up[up.length - 1].label)} sur un an`, up[up.length - 1], up[up.length - 1].y1) : ""}</div>
     <p><a class="btn" href="${prixUrl(A.mois)}">Lire l'article de ${monthFr(A.mois)}</a></p>
   </article>
+  ${devisBlock()}
 </div></section>
 <section class="block"><div class="wrap">
   <h2>Tous les mois</h2>

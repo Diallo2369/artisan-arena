@@ -348,3 +348,6 @@ td.c,th.c{text-align:center;white-space:nowrap}
 .tr.up{clip-path:polygon(50% 0,100% 70%,64% 70%,64% 100%,36% 100%,36% 70%,0 70%);color:var(--warn)}
 .tr.down{clip-path:polygon(36% 0,64% 0,64% 30%,100% 30%,50% 100%,0 30%,36% 30%);color:var(--ok)}
 .tr.flat{clip-path:polygon(0 36%,70% 36%,70% 0,100% 50%,70% 100%,70% 64%,0 64%)}
+/* aperçu des emplacements partenaires éteints (PUB_APERCU=1) */
+.devis.apercu{border:2px dashed var(--line);background:transparent;box-shadow:none}
+.devis.apercu .btn{opacity:.5;pointer-events:none}

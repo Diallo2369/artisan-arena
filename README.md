@@ -36,7 +36,7 @@ Sources (toutes publiques, Licence Ouverte) :
 | `scripts/prepare_data.py` | Regroupement par SIREN, rattachement aux communes, règles des quatre vérifications, lecture des jugements du BODACC. |
 | `src/lib/prix.json` | Séries INSEE suivies (matériaux par famille, index BT par métier), index affiché sur chaque page travaux, premier mois des articles. |
 | `src/lib/prix.js` | Articles « Prix des matériaux » : calcul des variations, règles d'écriture des titres et des textes, page de la rubrique. |
-| `src/lib/devis.js` | Bloc d'affiliation « Demander des devis », éteint par défaut. |
+| `src/lib/partenaires.js` | Tous les encarts d'affiliation, éteints par défaut : demande de devis (fiches, listes, accueil, guide, prix), vente de matériaux par famille (articles de prix), assurance des travaux (guide). `PUB_APERCU=1 npm run build` montre les emplacements vides. |
 | `src/lib/site.js` | Adresse du site, ouverture à Google, contact, mesure d'audience. |
 | `src/scripts/app.js` | Menu, recherche (nom, SIREN, SIRET, commune), filtres et tri des listes. |
 | `src/styles/site.css` | Tout le style, variables de couleur en tête. |

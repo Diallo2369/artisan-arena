@@ -2,7 +2,7 @@
 // Une seule source pour les textes et la mise en page : on modifie ici.
 import { esc, int, eur, pct, plural, dateFr, monthFr, year, inDep, inCity, ficheUrl, communeUrl, depUrl, travauxUrl } from "./fmt.js";
 import { T, TRAVAUX } from "./data.js";
-import { devisBlock } from "./devis.js";
+import { devisBlock, assuranceBlock } from "./partenaires.js";
 
 const ICON = {
   search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
@@ -147,6 +147,7 @@ export function renderHome({ nat, cities, regions, sample }) {
     <div class="card stat"><b class="num">${pct((nat.clean / nat.n) * 100)}</b><span>des entreprises RGE ne présentent aucun point de vigilance : ${int(nat.clean)} sur ${int(nat.n)}.</span></div>
   </div>
   <p class="src">Calcul Artisan Arena sur la liste des entreprises RGE de l'ADEME, croisée avec le BODACC, Sirene et les comptes publiés.</p>
+  ${devisBlock()}
 </div></section>
 <section class="block"><div class="wrap">
   <h2>Par type de travaux</h2>
@@ -262,6 +263,7 @@ export function renderDep({ d, communes }) {
 <section class="block"><div class="wrap">
   <h2>Par commune</h2>
   <ul class="links">${communes.map((c) => `<li><a href="${communeUrl(c)}">${esc(c.nom)}</a><span>${c.n} ${plural(c.n, "entreprise")}</span></li>`).join("")}</ul>
+  ${devisBlock("vos travaux " + place)}
 </div></section>`;
 }
 
@@ -274,6 +276,7 @@ export function renderTravauxHub({ nat }) {
 </div></section>
 <section class="block"><div class="wrap">
   <ul class="trav">${tl.map((t) => `<li><a class="card" href="${travauxUrl(t.slug)}"><b>${t.label}</b><span class="num">${int(nat.tc[t.slug])}</span></a></li>`).join("")}</ul>
+  ${devisBlock()}
 </div></section>`;
 }
 
@@ -287,6 +290,7 @@ export function renderTravaux({ t, deps, n }) {
   <h2>Par département</h2>
   <ul class="links">${deps.map((d) => `<li><a href="${travauxUrl(t.slug, d)}">${esc(d.nom)} (${d.code})</a><span>${int(d.tc[t.slug])}</span></li>`).join("")}</ul>
   <p class="src">La mention RGE conditionne la plupart des aides publiques à la rénovation énergétique, comme MaPrimeRénov', l'éco-prêt à taux zéro ou les primes CEE. Vérifiez les conditions de chaque aide sur france-renov.gouv.fr.</p>
+  ${devisBlock(t.quoi)}
 </div></section>`;
 }
 
@@ -322,8 +326,10 @@ export function renderVerifier({ nat }) {
   <ul><li>Vérifiez que l'entreprise figure sur la liste officielle, avec le même numéro SIRET que sur le devis.</li><li>Vérifiez que la qualification couvre vos travaux et qu'elle sera encore valide à la signature du devis.</li><li>Ouvrez le certificat : chaque fiche du site renvoie vers celui que l'organisme a publié.</li></ul>
   <h2>5. L'assurance décennale</h2>
   <p>Elle couvre pendant dix ans les dommages qui compromettent la solidité de l'ouvrage. Elle est obligatoire pour les travaux de construction, et le devis comme la facture doivent indiquer l'assureur et la zone couverte. Aucune base publique ne la recense : demandez l'attestation, et appelez l'assureur en cas de doute.</p>
+  ${assuranceBlock()}
   <h2>Et l'acompte&nbsp;?</h2>
   <p>Aucun texte ne fixe de plafond général à l'acompte d'un chantier : c'est le devis signé qui fait foi. Après un démarchage à domicile ou un contrat signé hors de l'entreprise, vous disposez de 14 jours pour vous rétracter, et aucun paiement ne peut être exigé avant 7 jours. Une demande d'acompte élevée, surtout de la part d'une entreprise qui présente un point de vigilance, mérite une explication écrite.</p>
+  ${devisBlock()}
   <p class="src">Pour un litige : la direction départementale de la protection des populations (DDPP) et le site signal.conso.gouv.fr. Pour les aides et un conseil gratuit : france-renov.gouv.fr.</p>
 </div></div></section>`;
 }
