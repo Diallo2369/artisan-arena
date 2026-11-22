@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Cet artisan est-il RGE et solide financièrement ? Qualification RGE, procédures collectives et comptes publiés, entreprise par entreprise.",
+  "description": "Cet artisan est-il solide ? Procédures collectives, ancienneté, comptes publiés et qualification RGE, entreprise par entreprise.",
   "engines": {
     "node": ">=22"
   },

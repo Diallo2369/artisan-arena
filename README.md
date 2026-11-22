@@ -1,6 +1,6 @@
 # Artisan Arena
 
-« Cet artisan est-il RGE et solide financièrement ? » Site statique : une fiche par entreprise RGE (SIREN), avec quatre vérifications (qualification RGE, procédures collectives, état de l'entreprise, comptes), des pages par commune, par département et par type de travaux.
+« Cet artisan est-il solide ? » Site statique : une fiche par entreprise RGE (SIREN), avec quatre vérifications (procédures collectives, état de l'entreprise, comptes, qualification RGE), des pages par commune, par département et par type de travaux.
 
 ## Chaîne de données
 

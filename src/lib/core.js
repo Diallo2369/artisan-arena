@@ -30,10 +30,6 @@ const lastKind = (e) => [...e.bod].reverse().find((b) => b.k !== "autre")?.k;
 
 export function checks(e) {
   const out = [];
-  // RGE
-  const endTxt = noEnd(e.fin) ? "sans date de fin" : `jusqu'au ${dateFr(e.fin)}`;
-  out.push({ k: e.k_rge, lab: "Qualification RGE", val: e.k_rge === "ok" ? "Valide" : "Expire bientôt",
-    sub: `${e.q.length} ${plural(e.q.length, "qualification")}, ${endTxt}${e.since ? `. RGE depuis ${monthFr(e.since)}` : ""}.` });
   // procédures
   out.push({ k: e.k_proc, lab: "Procédures collectives", val: e.proc ? PROC[e.proc] : "Aucune publiée",
     sub: e.proc ? `${e.proc === "clos" ? "Clôturée le" : e.proc === "ancien" ? (lastKind(e) === "plan" ? "Plan arrêté il y a plus de 10 ans, le" : "Sans suite publiée depuis le jugement du") : "Dernier jugement le"} ${dateFr(e.proc_d)}, d'après le BODACC.` : "Ni sauvegarde, ni redressement, ni liquidation au BODACC depuis 2008." });
@@ -58,6 +54,10 @@ export function checks(e) {
     if (c.ca) bits.push(`chiffre d'affaires ${eur(c.ca)}`);
     out.push({ k: e.k_cpt, lab: "Comptes", val, sub: `${bits.join(", ") || "Montants confidentiels"} (exercice clos le ${dateFr(c.d)}).${af != null && af < 0 ? " Capitaux propres négatifs." : ""}` });
   }
+  // RGE
+  const endTxt = noEnd(e.fin) ? "sans date de fin" : `jusqu'au ${dateFr(e.fin)}`;
+  out.push({ k: e.k_rge, lab: "Qualification RGE", val: e.k_rge === "ok" ? "Valide" : "Expire bientôt",
+    sub: `${e.q.length} ${plural(e.q.length, "qualification")}, ${endTxt}${e.since ? `. RGE depuis ${monthFr(e.since)}` : ""}.` });
   return out;
 }
 
@@ -65,16 +65,16 @@ function summary(e, cs) {
   const bad = cs.filter((c) => c.k === "bad"), warn = cs.filter((c) => c.k === "warn");
   if (bad.length) return `<b>Alerte :</b> ${bad.map((c) => c.val[0].toLowerCase() + c.val.slice(1)).join(", ")}. Ne versez pas d'acompte sans avoir obtenu d'explications écrites.`;
   if (warn.length) return `<b>${warn.length === 1 ? "Un point" : warn.length + " points"} à vérifier :</b> ${warn.map((c) => c.lab[0].toLowerCase() + c.lab.slice(1) + " (" + c.val[0].toLowerCase() + c.val.slice(1) + ")").join(", ")}. Le reste ne montre rien d'anormal dans les données publiques.`;
-  return "<b>Rien d'anormal dans les données publiques :</b> qualification RGE valide, aucune procédure collective, entreprise active" + (e.k_cpt === "ok" ? ", derniers comptes positifs." : ".");
+  return "<b>Rien d'anormal dans les données publiques :</b> aucune procédure collective, entreprise active" + (e.k_cpt === "ok" ? ", derniers comptes positifs" : "") + ", qualification RGE valide.";
 }
 
 // ---------- listes ----------
 function flags(e) {
   const f = [];
-  f.push([e.k_rge, noEnd(e.fin) ? "RGE sans échéance" : e.k_rge === "ok" ? `RGE jusqu'en ${year(e.fin)}` : `RGE jusqu'au ${dateFr(e.fin)}`]);
   f.push([e.k_proc, e.proc ? PROC_SHORT[e.proc] : "Aucune procédure"]);
   if (e.si) f.push([e.k_ent, e.si.etat === "C" ? "Entreprise cessée" : e.si.cree ? `Créée en ${year(e.si.cree)}` : "Active"]);
   if (e.k_cpt !== "na") f.push([e.k_cpt, e.k_cpt === "ok" ? "Comptes positifs" : "Comptes négatifs"]);
+  f.push([e.k_rge, noEnd(e.fin) ? "RGE sans échéance" : e.k_rge === "ok" ? `RGE jusqu'en ${year(e.fin)}` : `RGE jusqu'au ${dateFr(e.fin)}`]);
   return f.map(([k, t]) => `<span class="flag">${ic(k)}${t}</span>`).join("");
 }
 
@@ -125,25 +125,25 @@ const beforeList = () => `<ol class="todo">${BEFORE.map(([b, s]) => `<li class="
 export function renderHome({ nat, cities, regions, sample }) {
   const tl = TRAVAUX.filter((t) => nat.tc[t.slug]).sort((a, b) => nat.tc[b.slug] - nat.tc[a.slug]);
   return `<section class="band hero"><div class="wrap">
-  <h1>Cet artisan est-il RGE et solide financièrement&nbsp;?</h1>
-  <p class="lede">Avant de verser un acompte : sa qualification RGE, ses éventuelles procédures collectives, son ancienneté et ses comptes, pour chacune des ${int(nat.n)} entreprises RGE de France.</p>
+  <h1>Cet artisan est-il solide&nbsp;?</h1>
+  <p class="lede">Avant de verser un acompte : ses éventuelles procédures collectives, son ancienneté, ses comptes et sa qualification RGE, pour chacune des ${int(nat.n)} entreprises RGE de France.</p>
   ${searchBox("q")}
   ${sample ? `<p class="eg">Par exemple : <a href="${ficheUrl(sample)}">${esc(sample.nom)}</a>, ou un numéro SIRET.</p>` : ""}
 </div></section>
 <section class="block"><div class="wrap">
   <h2>Quatre vérifications sur chaque entreprise</h2>
   <ul class="how">
-    <li class="card"><b>${ic("ok")}Qualification RGE</b><p>En cours de validité, pour quels travaux, depuis quand. Source : ADEME.</p></li>
     <li class="card"><b>${ic("ok")}Procédures collectives</b><p>Sauvegarde, redressement ou liquidation judiciaire. Source : BODACC.</p></li>
     <li class="card"><b>${ic("ok")}Entreprise active</b><p>Date de création, forme juridique, effectif. Source : Sirene, INSEE.</p></li>
     <li class="card"><b>${ic("ok")}Comptes</b><p>Résultat et capitaux propres du dernier exercice publié. Source : INPI.</p></li>
+    <li class="card"><b>${ic("ok")}Qualification RGE</b><p>En cours de validité, pour quels travaux, depuis quand. Source : ADEME.</p></li>
   </ul>
 </div></section>
 <section class="block"><div class="wrap">
   <h2>Ce que montrent les données</h2>
   <div class="stats">
     <div class="card stat"><b class="num">${int(nat.proc_open)}</b><span>entreprises RGE sont en redressement, en sauvegarde ou en liquidation judiciaire, d'après le BODACC.</span></div>
-    <div class="card stat"><b class="num">${int(nat.exp90)}</b><span>entreprises voient toutes leurs qualifications RGE expirer dans les 90 jours.</span></div>
+    <div class="card stat"><b class="num">${int(nat.cpt_neg)}</b><span>entreprises ont publié des derniers comptes en perte ou avec des capitaux propres négatifs.</span></div>
     <div class="card stat"><b class="num">${pct((nat.clean / nat.n) * 100)}</b><span>des entreprises RGE ne présentent aucun point de vigilance : ${int(nat.clean)} sur ${int(nat.n)}.</span></div>
   </div>
   <p class="src">Calcul Artisan Arena sur la liste des entreprises RGE de l'ADEME, croisée avec le BODACC, Sirene et les comptes publiés.</p>
@@ -211,10 +211,10 @@ export function renderFiche({ e, dep, near }) {
 </div></section>
 <section class="block"><div class="wrap">
   <div class="acc">
-    ${acc("Les qualifications RGE", `${e.q.length} · ${e.t.length} ${plural(e.t.length, "type")} de travaux`, quals, "rge", true)}
-    ${acc("Les procédures collectives", e.bod.length ? `${e.bod.length} ${plural(e.bod.length, "jugement")} au BODACC` : "aucune publiée", proc, "procedures", e.k_proc !== "ok")}
+    ${acc("Les procédures collectives", e.bod.length ? `${e.bod.length} ${plural(e.bod.length, "jugement")} au BODACC` : "aucune publiée", proc, "procedures", true)}
     ${acc("L'entreprise", si ? (si.etat === "C" ? "cessée" : si.cree ? "créée en " + year(si.cree) : "active") : "non retrouvée", entreprise, "entreprise")}
     ${acc("Les comptes", e.cpt.length ? `${e.cpt.length} ${plural(e.cpt.length, "exercice")} publié${e.cpt.length > 1 ? "s" : ""}` : "non publiés", comptes, "comptes", e.k_cpt === "warn")}
+    ${acc("Les qualifications RGE", `${e.q.length} · ${e.t.length} ${plural(e.t.length, "type")} de travaux`, quals, "rge")}
     ${acc("Coordonnées", `${e.est.length} ${plural(e.est.length, "établissement")}`, ests, "coordonnees")}
   </div>
   <h2 style="margin-top:34px">Avant de signer le devis</h2>
@@ -310,16 +310,16 @@ export function renderVerifier({ nat }) {
   ${searchBox("q")}
 </div></section>
 <section class="block"><div class="wrap"><div class="prose">
-  <h2>1. La qualification RGE</h2>
-  <p>RGE signifie « Reconnu garant de l'environnement ». La mention est délivrée par un organisme de qualification (Qualibat, Qualit'EnR, Qualifelec…) pour un type de travaux précis et pour une durée limitée, en général quatre ans avec un contrôle de chantier. Elle conditionne la plupart des aides à la rénovation énergétique.</p>
-  <ul><li>Vérifiez que l'entreprise figure sur la liste officielle, avec le même numéro SIRET que sur le devis.</li><li>Vérifiez que la qualification couvre vos travaux et qu'elle sera encore valide à la signature du devis.</li><li>Ouvrez le certificat : chaque fiche du site renvoie vers celui que l'organisme a publié.</li></ul>
-  <h2>2. Les procédures collectives</h2>
+  <h2>1. Les procédures collectives</h2>
   <p>Une entreprise en difficulté peut être placée par le tribunal en sauvegarde, en redressement ou en liquidation judiciaire. Chaque jugement est publié au Bulletin officiel des annonces civiles et commerciales (BODACC). Une entreprise en redressement peut continuer à travailler ; mais si elle disparaît, l'acompte versé devient une créance à déclarer, rarement remboursée en entier.</p>
   <p>Aujourd'hui, ${int(nat.proc_open)} entreprises de la liste RGE ont une procédure en cours d'après le BODACC.</p>
-  <h2>3. L'entreprise est-elle active, et depuis quand&nbsp;?</h2>
+  <h2>2. L'entreprise est-elle active, et depuis quand&nbsp;?</h2>
   <p>Le répertoire Sirene de l'INSEE indique si l'entreprise est active, sa date de création, sa forme juridique et sa tranche d'effectif. Une entreprise très récente n'est pas suspecte en soi, mais elle n'a pas encore d'historique.</p>
-  <h2>4. Les comptes</h2>
+  <h2>3. Les comptes</h2>
   <p>Les sociétés déposent leurs comptes au greffe ; les plus petites peuvent demander qu'ils restent confidentiels. Quand ils sont publiés, le résultat net et les capitaux propres donnent une idée de la solidité : des capitaux propres négatifs signifient que les dettes dépassent ce que possède l'entreprise. Les entrepreneurs individuels ne publient pas de comptes.</p>
+  <h2>4. La qualification RGE</h2>
+  <p>RGE signifie « Reconnu garant de l'environnement ». La mention est délivrée par un organisme de qualification (Qualibat, Qualit'EnR, Qualifelec…) pour un type de travaux précis et pour une durée limitée, en général quatre ans avec un contrôle de chantier. Elle conditionne la plupart des aides à la rénovation énergétique.</p>
+  <ul><li>Vérifiez que l'entreprise figure sur la liste officielle, avec le même numéro SIRET que sur le devis.</li><li>Vérifiez que la qualification couvre vos travaux et qu'elle sera encore valide à la signature du devis.</li><li>Ouvrez le certificat : chaque fiche du site renvoie vers celui que l'organisme a publié.</li></ul>
   <h2>5. L'assurance décennale</h2>
   <p>Elle couvre pendant dix ans les dommages qui compromettent la solidité de l'ouvrage. Elle est obligatoire pour les travaux de construction, et le devis comme la facture doivent indiquer l'assureur et la zone couverte. Aucune base publique ne la recense : demandez l'attestation, et appelez l'assureur en cas de doute.</p>
   <h2>Et l'acompte&nbsp;?</h2>
@@ -343,18 +343,18 @@ export function renderAbout({ contact, nat, meta }) {
   <aside><nav class="toc" aria-label="Sur cette page"><b>Sur cette page</b>${TOC.map((t) => `<a href="#${t[0]}">${t[1]}</a>`).join("")}</nav></aside>
   <article class="doc-main">
     <section id="pourquoi"><h2>Pourquoi ce site</h2>
-      <p>Avant de verser un acompte, on vérifie rarement si l'artisan est vraiment qualifié RGE, et presque jamais s'il fait l'objet d'une procédure collective. Les deux informations sont publiques, mais sur des sites différents, sous des numéros différents.</p>
-      <p>Artisan Arena les réunit sur une fiche par entreprise, pour les ${int(nat.n)} entreprises de la liste RGE. Le site fait partie de la famille Arena, avec EHPAD Arena, Argile Arena, Eau Arena et Scol Arena.</p></section>
+      <p>Avant de verser un acompte, on vérifie presque jamais si l'artisan fait l'objet d'une procédure collective, depuis quand il existe ou ce que disent ses comptes. Ces informations sont publiques, mais sur des sites différents, sous des numéros différents.</p>
+      <p>Artisan Arena les réunit sur une fiche par entreprise, avec la qualification RGE, pour les ${int(nat.n)} entreprises de la liste RGE. Le site fait partie de la famille Arena, avec EHPAD Arena, Argile Arena, Eau Arena et Scol Arena.</p></section>
     <section id="sources"><h2>D'où viennent les données</h2>
       <ul class="srcs">${SRC.map((x) => `<li><span class="s-k">${x[0]}</span><div><b>${x[1]}</b> <small>${x[2]}</small><p>${x[3]}</p><p>${x[4]} · <a href="${x[5]}" target="_blank" rel="noopener">voir les données ↗</a></p></div></li>`).join("")}</ul>
       <p class="src">Données publiques réutilisées sous Licence Ouverte. Le site est recalculé chaque semaine ; dernier calcul le ${dateFr(meta.built)}.</p></section>
     <section id="verifications"><h2>Les quatre vérifications</h2>
       <p>Chaque vérification est verte, orange (point de vigilance), rouge (alerte) ou grise (pas de donnée).</p>
       <ul>
-        <li><b>Qualification RGE</b> : orange si toutes les qualifications de l'entreprise expirent dans moins de 90 jours.</li>
         <li><b>Procédures collectives</b> : rouge si une sauvegarde, un redressement ou une liquidation judiciaire est en cours ; orange si un plan est en cours d'exécution ou si une procédure passée a été clôturée. Nous suivons les jugements publiés dans l'ordre : ouverture, plan, conversion, clôture.</li>
         <li><b>Entreprise</b> : rouge si elle est cessée au répertoire Sirene ; orange si elle a été créée il y a moins de deux ans.</li>
         <li><b>Comptes</b> : orange si le dernier exercice publié, clos il y a moins de 30 mois, montre une perte ou des capitaux propres négatifs ; gris si les comptes sont confidentiels, anciens ou absents.</li>
+        <li><b>Qualification RGE</b> : orange si toutes les qualifications de l'entreprise expirent dans moins de 90 jours.</li>
       </ul>
       <p>Les listes sont classées ainsi : d'abord les entreprises sans point de vigilance, puis par ancienneté de la qualification RGE.</p></section>
     <section id="limites"><h2>Ce que le site ne dit pas</h2>
@@ -381,7 +381,7 @@ export function renderAbout({ contact, nat, meta }) {
 // ---------- titres et descriptions ----------
 export function seo(kind, a = {}) {
   const y = new Date().getFullYear();
-  if (kind === "home") return { title: "Artisan Arena : cet artisan est-il RGE et solide financièrement ?", desc: "Qualification RGE, procédures collectives au BODACC, ancienneté et comptes de chaque entreprise RGE de France. Gratuit, sans inscription." };
+  if (kind === "home") return { title: "Artisan Arena : cet artisan est-il solide ?", desc: "Procédures collectives au BODACC, ancienneté, comptes publiés et qualification RGE de chaque entreprise RGE de France, avant de verser un acompte. Gratuit, sans inscription." };
   if (kind === "commune") return { title: `Artisans RGE ${inCity(a.c)} : les ${a.c.n} entreprises vérifiées (${y})`, desc: `Les ${a.c.n} ${plural(a.c.n, "entreprise")} RGE ${inCity(a.c)} : qualification en cours, procédures collectives, ancienneté et comptes publiés.` };
   if (kind === "dep") return { title: `Artisans RGE ${inDep(a.d)} : ${a.d.n} entreprises vérifiées (${y})`, desc: `Les ${a.d.n} entreprises RGE ${inDep(a.d)}, par type de travaux et par commune : qualification, procédures collectives et comptes.` };
   if (kind === "travaux") return { title: `${a.t.titre} : la liste vérifiée par département`, desc: `${a.n} entreprises qualifiées RGE pour ${a.t.quoi}, département par département, avec leurs procédures collectives et leurs comptes.` };
@@ -389,7 +389,7 @@ export function seo(kind, a = {}) {
   if (kind === "fiche") {
     const e = a.e;
     const st = e.k_proc === "bad" ? PROC[e.proc].toLowerCase() : e.v ? "points de vigilance" : "aucune procédure";
-    return { title: `${e.nom}${e.ville ? ` (${villeOf(e)})` : ""} : RGE, procédures, comptes`, desc: `${e.nom}, SIREN ${e.id} : RGE ${noEnd(e.fin) ? "sans échéance" : `jusqu'au ${dateFr(e.fin)}`} pour ${e.t.slice(0, 3).map((t) => T[t].label.toLowerCase()).join(", ")}; ${st}. Vérifications avant de signer un devis.` };
+    return { title: `${e.nom}${e.ville ? ` (${villeOf(e)})` : ""} : procédures, comptes, RGE`, desc: `${e.nom}, SIREN ${e.id} : ${st} ; RGE ${noEnd(e.fin) ? "sans échéance" : `jusqu'au ${dateFr(e.fin)}`} pour ${e.t.slice(0, 3).map((t) => T[t].label.toLowerCase()).join(", ")}. Vérifications avant de signer un devis.` };
   }
   return { title: a.title, desc: a.desc };
 }
