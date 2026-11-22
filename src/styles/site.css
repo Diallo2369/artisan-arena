@@ -343,3 +343,8 @@ td.c,th.c{text-align:center;white-space:nowrap}
   .kfs{grid-template-columns:1fr}
   .arts li{flex-direction:column;gap:2px}
 }
+/* flèche de tendance sur un mois, dessinée en CSS (un caractère ↑ sortirait décalé selon la police) */
+.tr{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px;background:currentColor;color:var(--muted)}
+.tr.up{clip-path:polygon(50% 0,100% 70%,64% 70%,64% 100%,36% 100%,36% 70%,0 70%);color:var(--warn)}
+.tr.down{clip-path:polygon(36% 0,64% 0,64% 30%,100% 30%,50% 100%,0 30%,36% 30%);color:var(--ok)}
+.tr.flat{clip-path:polygon(0 36%,70% 36%,70% 0,100% 50%,70% 100%,70% 64%,0 64%)}

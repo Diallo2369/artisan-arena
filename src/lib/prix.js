@@ -43,6 +43,10 @@ export function stats(snap, id) {
 const pv = (x) => { if (x == null) return "—"; const r = Math.abs(x) >= 10 ? Math.round(x) : Math.round(x * 10) / 10; const s = Math.abs(x) >= 10 ? num(Math.abs(r), 0) : num(Math.abs(r)); return (r > 0 ? "+" : r < 0 ? "−" : "") + s + " %"; };
 const cls = (x) => (x == null ? "" : x >= 0.05 ? "up" : x <= -0.05 ? "down" : "");
 const cell = (x) => `<td class="r ${cls(x)}">${pv(x)}</td>`;
+// Colonne « 1 mois » : flèche de tendance par rapport au mois précédent ; en dessous de 0,5 %, flèche horizontale (stable)
+const TREND = { up: "en hausse", down: "en baisse", flat: "stable" };
+const trend = (x) => (x == null ? null : x >= 0.5 ? "up" : x <= -0.5 ? "down" : "flat");
+const cellMois = (x) => { const t = trend(x); return t ? `<td class="r ${t === "flat" ? "" : t}"><i class="tr ${t}" title="${TREND[t]} sur un mois" aria-hidden="true"></i>${pv(x)}</td>` : cell(x); };
 const evol = (x) => (x == null ? "n'est pas encore comparable" : Math.abs(x) < 0.05 ? "est stable" : `${x > 0 ? "augmente" : "baisse"} de ${pv(Math.abs(x)).replace("+", "")}`);
 
 function spark(vals) {
@@ -85,7 +89,7 @@ export function article(snap) {
 
 const table = (rows, { code = false } = {}) => `<div class="tw"><table class="px">
   <thead><tr><th scope="col">${code ? "Métier" : "Matériau"}</th><th scope="col" class="r">Indice</th><th scope="col" class="r">1 mois</th><th scope="col" class="r">1 an</th><th scope="col" class="r">Depuis 2021</th><th scope="col" class="c">24 mois</th></tr></thead>
-  <tbody>${rows.map((s) => `<tr><th scope="row"><a href="${INSEE}${s.id}" target="_blank" rel="noopener">${esc(s.label)}</a>${code ? ` <small>${s.code}</small>` : s.note ? `<small>${esc(s.note)}</small>` : ""}</th><td class="r">${num(s.v)}</td>${cell(s.m1)}${cell(s.y1)}${cell(s.s21)}<td class="c">${spark(s.spark)}</td></tr>`).join("")}</tbody>
+  <tbody>${rows.map((s) => `<tr><th scope="row"><a href="${INSEE}${s.id}" target="_blank" rel="noopener">${esc(s.label)}</a>${code ? ` <small>${s.code}</small>` : s.note ? `<small>${esc(s.note)}</small>` : ""}</th><td class="r">${num(s.v)}</td>${cellMois(s.m1)}${cell(s.y1)}${cell(s.s21)}<td class="c">${spark(s.spark)}</td></tr>`).join("")}</tbody>
 </table></div>`;
 
 export function renderArticle(snap, { prev, next }) {
