@@ -1,0 +1,25 @@
+---
+// Vérification à la demande d'un artisan qui n'a pas de fiche (hors liste RGE) : les données sont lues en direct
+// par src/scripts/live.js. ?siren=123456789 : la fiche ; ?q=nom : la recherche parmi tous les artisans.
+import Base from "../../layouts/Base.astro";
+import { devisBlock } from "../../lib/partenaires.js";
+import { load } from "../../lib/data.js";
+const deps = Object.values(load().deps).sort((a, b) => a.code.localeCompare(b.code));
+---
+<Base title="Vérifier un artisan" description="Procédures collectives, ancienneté et comptes de n'importe quel artisan du bâtiment, à partir de son nom ou de son numéro SIREN, lus en direct auprès des services publics." page="artisan" noindex>
+  <section class="band" id="lv-search"><div class="wrap">
+    <p class="crumb"><a href="/">Accueil</a></p>
+    <h1>Vérifier un artisan</h1>
+    <p class="lede">Tous les artisans et entreprises du bâtiment : tapez le nom ou le numéro SIREN. Procédures collectives, ancienneté et comptes sont lus en direct auprès des services publics.</p>
+    <form class="lv-form" id="lv-form" role="search">
+      <label class="lv-q"><span>Nom ou SIREN</span><input id="lv-q" name="q" type="search" autocomplete="off" enterkeyhint="search" placeholder="Ex. : Dumas Plomberie" required minlength="2"></label>
+      <label class="lv-d"><span>Département</span><select id="lv-dep" name="dep"><option value="">Toute la France</option>{deps.map((d) => <option value={d.code}>{d.code} · {d.nom}</option>)}</select></label>
+      <label class="lv-b"><input id="lv-bat" name="bat" type="checkbox" checked> Bâtiment uniquement</label>
+      <button class="btn" type="submit">Rechercher</button>
+    </form>
+  </div></section>
+  <div id="lv-out" aria-live="polite"></div>
+  <template id="lv-devis"><Fragment set:html={devisBlock()} /></template>
+  <noscript><section class="block"><div class="wrap"><p class="empty">Cette page a besoin de JavaScript pour interroger les services publics.</p></div></section></noscript>
+</Base>
+<script>import "../../scripts/live.js";</script>

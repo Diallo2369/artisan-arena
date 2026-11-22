@@ -351,3 +351,14 @@ td.c,th.c{text-align:center;white-space:nowrap}
 /* aperçu des emplacements partenaires éteints (PUB_APERCU=1) */
 .devis.apercu{border:2px dashed var(--line);background:transparent;box-shadow:none}
 .devis.apercu .btn{opacity:.5;pointer-events:none}
+
+/* ---------- page /artisan/ : vérification en direct ---------- */
+.lv-form{display:grid;grid-template-columns:minmax(0,1fr) 220px auto auto;gap:10px 12px;align-items:end;margin-top:24px;max-width:900px}
+.lv-form label span{display:block;font-size:.85rem;font-weight:700;color:var(--on-band-muted);margin-bottom:4px}
+.lv-form input[type=search],.lv-form select{width:100%;height:50px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);padding:0 14px;font-size:1rem}
+.lv-b{display:flex;align-items:center;gap:8px;min-height:50px;font-weight:600;white-space:nowrap}
+.lv-b input{width:20px;height:20px}
+.lv-form .btn{height:50px}
+.lv-wait{color:var(--muted);padding:12px 2px}
+.lv-note{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--warn-bg);color:var(--fg);font-weight:600}
+@media (max-width:720px){.lv-form{grid-template-columns:1fr}.lv-b{min-height:0}}

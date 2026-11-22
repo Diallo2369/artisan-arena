@@ -1,6 +1,6 @@
 # Artisan Arena
 
-« Cet artisan est-il solide ? » Site statique : une fiche par entreprise RGE (SIREN), avec quatre vérifications (procédures collectives, état de l'entreprise, comptes, qualification RGE), des pages par commune, par département et par type de travaux.
+« Cet artisan est-il solide ? » Site statique : une fiche permanente par entreprise RGE (SIREN), pour le référencement, et une vérification à la demande pour tous les autres artisans (page `/artisan/`, données lues en direct). Quatre vérifications : procédures collectives, état de l'entreprise, comptes, qualification RGE, des pages par commune, par département et par type de travaux.
 
 ## Chaîne de données
 
@@ -8,7 +8,8 @@
 npm run data:fetch    → scripts/fetch_data.py    télécharge dans data/raw/ (hors dépôt)
 npm run data:prepare  → scripts/prepare_data.py  produit data/build/site.json et public/data/search.json
                         scripts/prix_snapshots.py fige les chiffres du mois dans data/prix/AAAA-MM.json
-npm run build         → scripts/check_data.mjs (bloque si les volumes sont anormaux), astro build, scripts/postbuild.mjs
+npm run build         → scripts/check_data.mjs (bloque si les volumes sont anormaux), scripts/check_live.mjs (règles JavaScript = règles Python),
+                        astro build, scripts/postbuild.mjs
 ```
 
 Pour relancer une seule étape du téléchargement : `python3 scripts/fetch_data.py bodacc ratios` (étapes : `rge`, `hist`, `sirene`, `bodacc`, `ratios`, `prix`). Si un service est indisponible, le fichier de la publication précédente est conservé.
@@ -31,7 +32,10 @@ Sources (toutes publiques, Licence Ouverte) :
 
 | Fichier | Rôle |
 | --- | --- |
-| `src/lib/core.js` | Toutes les pages en fonctions qui renvoient du HTML : accueil, fiche, commune, département, travaux, « Avant de signer », à propos. Textes des vérifications, titres et descriptions. |
+| `src/lib/core.js` | Les pages en fonctions qui renvoient du HTML : accueil, commune, département, travaux, « Avant de signer », à propos. Titres et descriptions. |
+| `src/lib/fiche.js` | La fiche d'une entreprise et les textes des quatre vérifications, partagés entre les fiches construites et la page `/artisan/` (navigateur). Contient aussi la version JavaScript des règles de `prepare_data.py` pour les artisans lus en direct. |
+| `src/lib/referentiels.json` | Mots et sigles pour remettre en forme les noms, formes juridiques, tranches d'effectif, intitulés d'activité : lus par le Python et par le navigateur. |
+| `src/scripts/live.js` | Page `/artisan/` : interroge l'Annuaire des entreprises, le BODACC et l'INPI depuis le navigateur ; redirige vers la fiche complète si l'entreprise en a une. |
 | `src/lib/travaux.json` | Les familles de travaux et les domaines RGE de l'ADEME qu'elles regroupent (lu aussi par la préparation des données). |
 | `scripts/prepare_data.py` | Regroupement par SIREN, rattachement aux communes, règles des quatre vérifications, lecture des jugements du BODACC. |
 | `src/lib/prix.json` | Séries INSEE suivies (matériaux par famille, index BT par métier), index affiché sur chaque page travaux, premier mois des articles. |
@@ -53,6 +57,16 @@ Variables du dépôt (Settings › Secrets and variables › Actions › Variabl
 - `CF_BEACON` : jeton Cloudflare Web Analytics (sans cookie), facultatif.
 
 Réglages : Settings › Pages › Source : « GitHub Actions ». Domaine personnalisé, puis « Enforce HTTPS ». DNS : quatre enregistrements A vers 185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153 et un CNAME `www` vers `<compte>.github.io`.
+
+## Artisans sans fiche (vérification à la demande)
+
+Les fiches pré-générées ne concernent que les entreprises de la liste RGE (56 000 pages, pour le référencement). Pour tous les autres artisans, la recherche propose « Vérifier l'entreprise » (numéro SIREN ou SIRET) ou « Chercher parmi tous les artisans » (nom) : la page `/artisan/?siren=…` ou `/artisan/?q=…` interroge en direct, depuis le navigateur du visiteur, trois services publics gratuits et sans clé :
+
+- l'Annuaire des entreprises (recherche-entreprises.api.gouv.fr) : identité, état, création, activité ;
+- le BODACC (bodacc-datadila.opendatasoft.com) : procédures collectives ;
+- l'INPI, ratios financiers (data.economie.gouv.fr) : comptes.
+
+Les verdicts suivent exactement les règles des fiches : `scripts/check_live.mjs` rejoue la version JavaScript sur toutes les entreprises RGE et bloque la construction à la moindre différence avec le Python. Une modification de règle se fait donc dans `prepare_data.py` et dans `src/lib/fiche.js`. La page `/artisan/` est fermée à Google.
 
 ## Prix des matériaux
 

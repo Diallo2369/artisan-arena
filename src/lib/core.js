@@ -1,72 +1,19 @@
 // Rendu de toutes les pages : fonctions pures qui renvoient du HTML, utilisées à la construction (Astro).
 // Une seule source pour les textes et la mise en page : on modifie ici.
-import { esc, int, eur, pct, plural, dateFr, monthFr, year, inDep, inCity, ficheUrl, communeUrl, depUrl, travauxUrl } from "./fmt.js";
+import { esc, int, pct, plural, dateFr, year, inDep, inCity, ficheUrl, communeUrl, depUrl, travauxUrl } from "./fmt.js";
 import { T, TRAVAUX } from "./data.js";
 import { devisBlock, assuranceBlock } from "./partenaires.js";
+import { ic, noEnd, villeOf, PROC, PROC_SHORT, renderFiche as ficheHtml } from "./fiche.js";
 
 const ICON = {
   search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
 };
-const MARK = { ok: "", warn: "!", bad: "!", na: "–" };
-const ic = (k) => `<i class="ic ${k}" aria-hidden="true">${MARK[k]}</i>`;
-const ORG = { qualibat: "Qualibat", qualitenr: "Qualit'EnR", opqibi: "OPQIBI", cnoa: "Ordre des architectes", qualifelec: "Qualifelec", cerqual: "Cerqual Qualitel Certification", afnor: "AFNOR Certification", certibat: "Certibat", opqtecc: "OPQTECC", lne: "LNE" };
-const org = (o) => ORG[o] || o;
-const noEnd = (d) => !d || d >= "2090";
-const BODACC = "https://www.bodacc.fr/pages/annonces-commerciales-detail/?q.id=id:";
-const ANNUAIRE = "https://annuaire-entreprises.data.gouv.fr/entreprise/";
-const villeOf = (e) => e.ville.replace(/ (\d+)(e|er) Arrondissement$/, " $1$2");
 
-// ---------- les quatre vérifications ----------
-const PROC = {
-  sauv: "Procédure de sauvegarde en cours", rj: "Redressement judiciaire en cours", lj: "Liquidation judiciaire",
-  cession: "Plan de cession", rp: "Rétablissement professionnel en cours", plan: "Plan de redressement ou de sauvegarde en cours", clos: "Procédure clôturée",
-  ancien: "Ancienne procédure", appel: "Décision infirmée en appel",
-};
-const PROC_SHORT = { sauv: "Sauvegarde en cours", rj: "Redressement en cours", lj: "Liquidation judiciaire", cession: "Plan de cession", rp: "Rétablissement en cours", plan: "Plan en cours", clos: "Procédure passée", ancien: "Procédure passée", appel: "Décision en appel" };
-const EV_KIND = { sauv: "bad", rj: "bad", lj: "bad", cession: "bad", rp: "bad", plan: "warn", clos: "ok", retract: "ok", appel: "warn", autre: "na" };
 
-// type du dernier jugement significatif (hors dépôts de créances et autres avis)
-const lastKind = (e) => [...e.bod].reverse().find((b) => b.k !== "autre")?.k;
 
-export function checks(e) {
-  const out = [];
-  // procédures
-  out.push({ k: e.k_proc, lab: "Procédures collectives", val: e.proc ? PROC[e.proc] : "Aucune publiée",
-    sub: e.proc ? `${e.proc === "clos" ? "Clôturée le" : e.proc === "ancien" ? (lastKind(e) === "plan" ? "Plan arrêté il y a plus de 10 ans, le" : "Sans suite publiée depuis le jugement du") : "Dernier jugement le"} ${dateFr(e.proc_d)}, d'après le BODACC.` : "Ni sauvegarde, ni redressement, ni liquidation au BODACC depuis 2008." });
-  // entreprise
-  const si = e.si;
-  if (!si) out.push({ k: "na", lab: "Entreprise", val: "Introuvable dans Sirene", sub: "Vérifiez le numéro SIREN avec l'entreprise." });
-  else if (si.etat === "C") out.push({ k: "bad", lab: "Entreprise", val: "Cessée", sub: `Fermée au répertoire Sirene${si.cess ? ` depuis le ${dateFr(si.cess)}` : ""}, alors qu'elle figure encore sur la liste RGE.` });
-  else {
-    const y = si.cree ? new Date().getFullYear() - +si.cree.slice(0, 4) : null;
-    out.push({ k: e.k_ent, lab: "Entreprise", val: si.cree ? `Créée en ${year(si.cree)}` : "Active",
-      sub: `${e.k_ent === "warn" ? "Moins de 2 ans d'existence. " : y ? `Active depuis ${y < 1 ? "moins d'un an" : y + " " + plural(y, "an")}. ` : "Active. "}${si.cjl ? esc(si.cjl) + (si.eff ? ", " + si.eff : "") + "." : ""}` });
-  }
-  // comptes
-  const c = e.cpt[0];
-  if (!c) out.push({ k: "na", lab: "Comptes", val: "Non publiés", sub: si && si.pp ? "Un entrepreneur individuel ne publie pas de comptes." : "Aucun compte annuel diffusé par l'INPI." });
-  else if (e.k_cpt === "na") out.push({ k: "na", lab: "Comptes", val: `Derniers en ${year(c.d)}`, sub: "Pas de comptes publiés depuis plus de 2 ans et demi." });
-  else {
-    const rn = c.rn, af = c.af;
-    const val = rn != null && rn < 0 ? "Résultat négatif" : af != null && af < 0 ? "Capitaux propres négatifs" : rn != null ? "Résultat positif" : "Comptes publiés";
-    const bits = [];
-    if (rn != null) bits.push(`${rn >= 0 ? "Bénéfice" : "Perte"} de ${eur(Math.abs(rn))}`);
-    if (c.ca) bits.push(`chiffre d'affaires ${eur(c.ca)}`);
-    out.push({ k: e.k_cpt, lab: "Comptes", val, sub: `${bits.join(", ") || "Montants confidentiels"} (exercice clos le ${dateFr(c.d)}).${af != null && af < 0 ? " Capitaux propres négatifs." : ""}` });
-  }
-  // RGE
-  const endTxt = noEnd(e.fin) ? "sans date de fin" : `jusqu'au ${dateFr(e.fin)}`;
-  out.push({ k: e.k_rge, lab: "Qualification RGE", val: e.k_rge === "ok" ? "Valide" : "Expire bientôt",
-    sub: `${e.q.length} ${plural(e.q.length, "qualification")}, ${endTxt}${e.since ? `. RGE depuis ${monthFr(e.since)}` : ""}.` });
-  return out;
-}
 
-function summary(e, cs) {
-  const bad = cs.filter((c) => c.k === "bad"), warn = cs.filter((c) => c.k === "warn");
-  if (bad.length) return `<b>Alerte :</b> ${bad.map((c) => c.val[0].toLowerCase() + c.val.slice(1)).join(", ")}. Ne versez pas d'acompte sans avoir obtenu d'explications écrites.`;
-  if (warn.length) return `<b>${warn.length === 1 ? "Un point" : warn.length + " points"} à vérifier :</b> ${warn.map((c) => c.lab[0].toLowerCase() + c.lab.slice(1) + " (" + c.val[0].toLowerCase() + c.val.slice(1) + ")").join(", ")}. Le reste ne montre rien d'anormal dans les données publiques.`;
-  return "<b>Rien d'anormal dans les données publiques :</b> aucune procédure collective, entreprise active" + (e.k_cpt === "ok" ? ", derniers comptes positifs" : "") + ", qualification RGE valide.";
-}
+// La fiche d'une entreprise est dans fiche.js (partagée avec la page /artisan/). Ici : le bloc partenaire de la fiche RGE.
+export const renderFiche = ({ e, dep, near }) => ficheHtml({ e, dep, near, devis: devisBlock(e.t[0] ? T[e.t[0]].quoi : "vos travaux") });
 
 // ---------- listes ----------
 function flags(e) {
@@ -105,7 +52,6 @@ function entList(es, { code = null, travaux = true, hideT = null, label = "entre
   <p class="list-more" hidden><button type="button" class="btn ghost">Afficher les <b></b> suivantes</button></p></div>`;
 }
 
-const checkTiles = (cs) => `<div class="checks">${cs.map((c, i) => `<div class="chk ${c.k}" style="--i:${i}"><span class="lab">${ic(c.k)}${c.lab}</span><span class="val">${c.val}</span><span class="sub">${c.sub}</span></div>`).join("")}</div>`;
 
 export function searchBox(id = "q", label = "Nom de l'entreprise, SIRET ou commune") {
   return `<form class="search" role="search" action="/" data-search>
@@ -113,20 +59,13 @@ export function searchBox(id = "q", label = "Nom de l'entreprise, SIRET ou commu
     <div id="${id}-s" class="sugg" role="listbox" hidden></div></form>`;
 }
 
-const BEFORE = [
-  ["Même nom, même SIRET que sur le devis", "un faux artisan RGE emprunte souvent l'identité d'une vraie entreprise."],
-  ["Une qualification qui couvre vos travaux", "sinon, pas d'aide publique."],
-  ["L'attestation d'assurance décennale", "obligatoire, avec le nom de l'assureur sur le devis."],
-  ["Un acompte raisonnable", "et aucun paiement pendant 7 jours après un démarchage à domicile."],
-];
-const beforeList = () => `<ol class="todo">${BEFORE.map(([b, s]) => `<li class="card"><b>${b}</b><span>${s}</span></li>`).join("")}</ol><p class="more"><a href="/verifier-un-artisan/">Les vérifications en détail</a></p>`;
 
 // ---------- pages ----------
 export function renderHome({ nat, cities, regions, sample }) {
   const tl = TRAVAUX.filter((t) => nat.tc[t.slug]).sort((a, b) => nat.tc[b.slug] - nat.tc[a.slug]);
   return `<section class="band hero"><div class="wrap">
   <h1>Cet artisan est-il solide&nbsp;?</h1>
-  <p class="lede">Avant de verser un acompte : ses éventuelles procédures collectives, son ancienneté, ses comptes et sa qualification RGE, pour chacune des ${int(nat.n)} entreprises RGE de France.</p>
+  <p class="lede">Avant de verser un acompte : ses éventuelles procédures collectives, son ancienneté et ses comptes. Pour tous les artisans du bâtiment, à partir de leur nom ou de leur numéro SIREN.</p>
   ${searchBox("q")}
   ${sample ? `<p class="eg">Par exemple : <a href="${ficheUrl(sample)}">${esc(sample.nom)}</a>, ou un numéro SIRET.</p>` : ""}
 </div></section>
@@ -136,17 +75,17 @@ export function renderHome({ nat, cities, regions, sample }) {
     <li class="card"><b>${ic("ok")}Procédures collectives</b><p>Sauvegarde, redressement ou liquidation judiciaire. Source : BODACC.</p></li>
     <li class="card"><b>${ic("ok")}Entreprise active</b><p>Date de création, forme juridique, effectif. Source : Sirene, INSEE.</p></li>
     <li class="card"><b>${ic("ok")}Comptes</b><p>Résultat et capitaux propres du dernier exercice publié. Source : INPI.</p></li>
-    <li class="card"><b>${ic("ok")}Qualification RGE</b><p>En cours de validité, pour quels travaux, depuis quand. Source : ADEME.</p></li>
+    <li class="card"><b>${ic("ok")}Qualification RGE</b><p>Utile seulement si vous demandez une aide publique, comme MaPrimeRénov'. Source : ADEME.</p></li>
   </ul>
 </div></section>
 <section class="block"><div class="wrap">
   <h2>Ce que montrent les données</h2>
   <div class="stats">
-    <div class="card stat"><b class="num">${int(nat.proc_open)}</b><span>entreprises RGE sont en redressement, en sauvegarde ou en liquidation judiciaire, d'après le BODACC.</span></div>
-    <div class="card stat"><b class="num">${int(nat.cpt_neg)}</b><span>entreprises ont publié des derniers comptes en perte ou avec des capitaux propres négatifs.</span></div>
-    <div class="card stat"><b class="num">${pct((nat.clean / nat.n) * 100)}</b><span>des entreprises RGE ne présentent aucun point de vigilance : ${int(nat.clean)} sur ${int(nat.n)}.</span></div>
+    <div class="card stat"><b class="num">${int(nat.proc_open)}</b><span>entreprises du bâtiment sont en procédure collective : ${[["lj", "liquidation", "liquidations"], ["rj", "redressement", "redressements"], ["sauv", "sauvegarde", "sauvegardes"], ["cession", "plan de cession", "plans de cession"]].filter(([k]) => nat.proc_k?.[k]).map(([k, a, b]) => `${int(nat.proc_k[k])} ${plural(nat.proc_k[k], a, b)}`).join(", ")}.</span></div>
+    <div class="card stat"><b class="num">${pct((nat.difficulte / nat.n) * 100)}</b><span>montrent au moins un signal de difficulté (${int(nat.difficulte)} entreprises) : procédure ou plan en cours, entreprise fermée, derniers comptes négatifs.</span></div>
+    <div class="card stat"><b class="num">${int(nat.cpt_neg)}</b><span>ont publié des derniers comptes en perte ou avec des capitaux propres négatifs, sur ${int(nat.cpt)} qui publient leurs comptes.</span></div>
   </div>
-  <p class="src">Calcul Artisan Arena sur la liste des entreprises RGE de l'ADEME, croisée avec le BODACC, Sirene et les comptes publiés.</p>
+  <p class="src">Calcul Artisan Arena sur les ${int(nat.n)} entreprises du bâtiment suivies chaque semaine (celles de la liste RGE de l'ADEME), croisées avec le BODACC, Sirene et l'INPI. Pour les autres artisans, la vérification se fait à la demande.</p>
   ${devisBlock()}
 </div></section>
 <section class="block"><div class="wrap">
@@ -163,68 +102,6 @@ export function renderHome({ nat, cities, regions, sample }) {
 </div></section>`;
 }
 
-export function renderFiche({ e, dep, near }) {
-  const cs = checks(e);
-  const si = e.si;
-  const acc = (t, hint, body, id, open = false) => `<details class="card" id="${id}"${open ? " open" : ""}><summary><b>${t}</b><span>${hint}</span></summary><div class="in">${body}</div></details>`;
-
-  const quals = `<div class="quals">${e.q.map((q) => `<div class="qual"><b>${esc(q.nom || q.cert)}</b>
-    <p>${org(q.org)}${q.code ? " · " + esc(q.code) : ""} · ${noEnd(q.fin) ? "sans date de fin" : `valide du ${dateFr(q.deb)} au ${dateFr(q.fin)}`}${e.est.length > 1 ? ` · ${q.est} ${plural(q.est, "établissement")}` : ""}</p>
-    <div class="tags">${q.dom.map((d) => `<span class="tag">${esc(d.replace(/\s+/g, " ").replace(/\.$/, ""))}</span>`).join("")}</div>
-    ${q.url ? `<p><a href="${esc(q.url)}" target="_blank" rel="noopener nofollow">Voir le certificat</a></p>` : ""}</div>`).join("")}</div>
-    <p class="src">Source : ADEME, liste des entreprises RGE, transmise par les organismes de qualification.${e.since ? ` Première qualification RGE connue : ${dateFr(e.since)} (historique tenu depuis 2014).` : ""}</p>`;
-
-  const proc = e.bod.length ? `<ol class="tl">${e.bod.slice().reverse().map((b) => `<li class="${EV_KIND[b.k]}"><time datetime="${b.d}">${dateFr(b.d)}</time><p>${esc(b.n)}</p><small>${esc(b.tr)}${b.id ? ` · <a href="${BODACC}${encodeURIComponent(b.id)}" target="_blank" rel="noopener nofollow">voir l'annonce au BODACC</a>` : ""}</small></li>`).join("")}</ol>
-    <p class="tx">${e.k_proc === "bad" ? "Pendant une procédure, l'entreprise peut continuer à travailler sous le contrôle du tribunal. Mais si elle disparaît, un acompte versé devient une créance à déclarer au mandataire, avec peu de chances d'être remboursée." : e.proc === "appel" ? "La cour d'appel a infirmé un jugement de la procédure. Demandez à l'entreprise où en est sa situation aujourd'hui." : e.proc === "ancien" && lastKind(e) === "plan" ? "Le plan a été arrêté il y a plus de 10 ans, la durée maximale d'un plan : il est probablement terminé. Demandez à l'entreprise s'il a été exécuté jusqu'au bout." : e.proc === "ancien" ? "Aucun jugement n'a été publié depuis plusieurs années : la procédure a pu se terminer sans publication retrouvée, ou concerner une activité antérieure du même entrepreneur. Demandez des explications à l'entreprise." : e.proc === "plan" ? "Un plan arrêté par le tribunal permet à l'entreprise de continuer son activité en remboursant ses dettes sur plusieurs années. Demandez où en est son exécution." : "La procédure est terminée. Demandez à l'entreprise comment elle en est sortie."}</p>`
-    : `<p class="tx">Aucun jugement de procédure collective (sauvegarde, redressement ou liquidation judiciaire) n'a été publié au BODACC pour ce numéro SIREN depuis 2008.</p>`;
-
-  const ests = e.est.map((x) => `<div class="estab">${x.tel ? `<span class="tel num">${x.tel}</span>` : ""}<span>${esc(x.adr ? x.adr + ", " : "")}${x.cp}</span><small class="src" style="margin:0">SIRET ${x.siret.replace(/^(\d{3})(\d{3})(\d{3})(\d{5})$/, "$1 $2 $3 $4")}${x.web ? ` · <a href="${esc(x.web)}" target="_blank" rel="noopener nofollow">site internet</a>` : ""}</small></div>`).join("");
-
-  const comptes = e.cpt.length ? `<div class="tw"><table class="num"><thead><tr><th>Exercice clos le</th><th class="r">Chiffre d'affaires</th><th class="r">Résultat net</th><th class="r">Autonomie financière</th></tr></thead><tbody>
-    ${e.cpt.map((c) => `<tr><td>${dateFr(c.d)}</td><td class="r">${c.ca ? eur(c.ca) : "–"}</td><td class="r${c.rn < 0 ? " neg" : ""}">${c.rn != null ? eur(c.rn) : "–"}</td><td class="r${c.af < 0 ? " neg" : ""}">${c.af != null ? pct(c.af) : "–"}</td></tr>`).join("")}</tbody></table></div>
-    <p class="src">L'autonomie financière est la part des capitaux propres dans le bilan : négative, elle signifie que les dettes dépassent ce que possède l'entreprise. « – » : montant non publié ou confidentiel. Source : INPI, ratios financiers des comptes annuels déposés.</p>`
-    : `<p class="tx">${si && si.pp ? "Cette entreprise est une entreprise individuelle : elle n'a pas à publier de comptes." : "Aucun compte annuel n'est diffusé pour cette entreprise : elle a pu demander la confidentialité, comme la loi le permet aux petites entreprises, ou ne pas les avoir déposés."} Vous pouvez lui demander son dernier bilan.</p>`;
-
-  const entreprise = si ? `<dl class="kv">
-    <div><dt>Numéro SIREN</dt><dd class="num">${e.id.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")}</dd></div>
-    ${si.cjl ? `<div><dt>Forme juridique</dt><dd>${esc(si.cjl)}</dd></div>` : ""}
-    ${si.cree ? `<div><dt>Date de création</dt><dd>${dateFr(si.cree)}</dd></div>` : ""}
-    <div><dt>État</dt><dd>${si.etat === "C" ? `Cessée${si.cess ? " le " + dateFr(si.cess) : ""}` : "Active"}</dd></div>
-    ${si.eff ? `<div><dt>Effectif${si.effy ? ` (${si.effy})` : ""}</dt><dd>${si.eff}</dd></div>` : ""}
-    ${si.naf ? `<div><dt>Code d'activité (NAF)</dt><dd>${esc(si.naf)}</dd></div>` : ""}
-  </dl><p class="tx"><a href="${ANNUAIRE}${e.id}" target="_blank" rel="noopener">Dirigeants, établissements et documents sur l'Annuaire des entreprises (site officiel)</a></p>`
-    : `<p class="tx">Ce numéro SIREN n'a pas été retrouvé dans le répertoire Sirene de l'INSEE. <a href="${ANNUAIRE}${e.id}" target="_blank" rel="noopener">Vérifier sur l'Annuaire des entreprises</a>.</p>`;
-
-  const nearHtml = near.length ? `<section class="block"><div class="wrap">
-    <h2>D'autres entreprises RGE ${inCity({ nom: villeOf(e) })}</h2>
-    <p class="sect-sub">Pour les mêmes types de travaux. Comparez les devis, et les vérifications.</p>
-    <ul class="near">${near.map((x) => `<li><a href="${ficheUrl(x)}">${esc(x.nom)}</a><span>${x.t.slice(0, 2).map((t) => T[t].label).join(", ")}${x.since ? ` · RGE depuis ${year(x.since)}` : ""}</span></li>`).join("")}</ul>
-    ${e.c ? `<p class="more"><a href="${communeUrl({ slug: e.cslug })}">Toutes les entreprises RGE ${inCity({ nom: villeOf(e) })}</a></p>` : ""}
-  </div></section>` : "";
-
-  const main = e.t[0];
-  return `<section class="band"><div class="wrap">
-  <p class="crumb"><a href="/">Accueil</a>${dep ? `<span>›</span><a href="${depUrl(dep)}">${esc(dep.nom)}</a>` : ""}${e.cslug ? `<span>›</span><a href="${communeUrl({ slug: e.cslug })}">Artisans RGE ${inCity({ nom: villeOf(e) })}</a>` : ""}</p>
-  <h1 class="fiche-h1">${esc(e.nom)}</h1>
-  <p class="fiche-sub">${e.ville ? `<b>${esc(villeOf(e))}</b> · ` : ""}SIREN ${e.id.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")}${e.est.length > 1 ? ` · ${e.est.length} établissements RGE` : ""}</p>
-  ${checkTiles(cs)}
-  <p class="verdict">${summary(e, cs)}</p>
-</div></section>
-<section class="block"><div class="wrap">
-  <div class="acc">
-    ${acc("Les procédures collectives", e.bod.length ? `${e.bod.length} ${plural(e.bod.length, "jugement")} au BODACC` : "aucune publiée", proc, "procedures", true)}
-    ${acc("L'entreprise", si ? (si.etat === "C" ? "cessée" : si.cree ? "créée en " + year(si.cree) : "active") : "non retrouvée", entreprise, "entreprise")}
-    ${acc("Les comptes", e.cpt.length ? `${e.cpt.length} ${plural(e.cpt.length, "exercice")} publié${e.cpt.length > 1 ? "s" : ""}` : "non publiés", comptes, "comptes", e.k_cpt === "warn")}
-    ${acc("Les qualifications RGE", `${e.q.length} · ${e.t.length} ${plural(e.t.length, "type")} de travaux`, quals, "rge")}
-    ${acc("Coordonnées", `${e.est.length} ${plural(e.est.length, "établissement")}`, ests, "coordonnees")}
-  </div>
-  <h2 style="margin-top:34px">Avant de signer le devis</h2>
-  ${beforeList()}
-  ${devisBlock(main ? T[main].quoi : "vos travaux")}
-  <p class="src">Une erreur sur cette fiche ? <a href="/a-propos/#erreur">Signalez-la</a>. Les données sont reprises des sources officielles, sans modification.</p>
-</div></section>
-${nearHtml}`;
-}
 
 export function renderCommune({ c, es, dep, kids = [] }) {
   const place = inCity(c);
@@ -350,7 +227,7 @@ export function renderAbout({ contact, nat, meta }) {
   <article class="doc-main">
     <section id="pourquoi"><h2>Pourquoi ce site</h2>
       <p>Avant de verser un acompte, on vérifie presque jamais si l'artisan fait l'objet d'une procédure collective, depuis quand il existe ou ce que disent ses comptes. Ces informations sont publiques, mais sur des sites différents, sous des numéros différents.</p>
-      <p>Artisan Arena les réunit sur une fiche par entreprise, avec la qualification RGE, pour les ${int(nat.n)} entreprises de la liste RGE. Le site fait partie de la famille Arena, avec EHPAD Arena, Argile Arena, Eau Arena et Scol Arena.</p></section>
+      <p>Artisan Arena les réunit pour tous les artisans du bâtiment : sur une fiche permanente pour les ${int(nat.n)} entreprises suivies chaque semaine (celles de la liste RGE), et à la demande, lues en direct auprès des services publics, pour toutes les autres. Le site fait partie de la famille Arena, avec EHPAD Arena, Argile Arena, Eau Arena et Scol Arena.</p></section>
     <section id="sources"><h2>D'où viennent les données</h2>
       <ul class="srcs">${SRC.map((x) => `<li><span class="s-k">${x[0]}</span><div><b>${x[1]}</b> <small>${x[2]}</small><p>${x[3]}</p><p>${x[4]} · <a href="${x[5]}" target="_blank" rel="noopener">voir les données ↗</a></p></div></li>`).join("")}</ul>
       <p class="src">Données publiques réutilisées sous Licence Ouverte. Le site est recalculé chaque semaine ; dernier calcul le ${dateFr(meta.built)}.</p></section>
@@ -368,7 +245,7 @@ export function renderAbout({ contact, nat, meta }) {
         <li>La qualité du travail : aucune base publique ne la mesure. Demandez des références de chantiers.</li>
         <li>L'assurance décennale : aucune base publique ne la recense. Demandez l'attestation.</li>
         <li>Les difficultés non publiées : une entreprise peut être en difficulté sans procédure collective. Un point vert n'est pas une garantie.</li>
-        <li>Les entreprises qui ne sont pas ou plus RGE : elles ne figurent pas sur le site.</li>
+        <li>Les artisans hors liste RGE n'ont pas de fiche permanente : leur vérification se fait à la demande, en direct, sur la page <a href="/artisan/">Vérifier un artisan</a>.</li>
       </ul></section>
     <section id="engagements"><h2>Nos engagements</h2>
       <ul>

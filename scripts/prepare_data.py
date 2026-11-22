@@ -18,6 +18,8 @@ from collections import Counter, defaultdict
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 RAW = os.path.join(ROOT, "data", "raw")
+# mots, sigles, formes juridiques et effectifs : partagés avec la page /artisan/ (src/lib/fiche.js)
+REF = json.load(open(os.path.join(ROOT, "src", "lib", "referentiels.json"), encoding="utf-8"))
 NM = os.path.join(ROOT, "node_modules", "@etalab", "decoupage-administratif", "data")
 TODAY = dt.date.today()
 TODAY_S = TODAY.isoformat()
@@ -43,26 +45,10 @@ def months_between(a, b):
     return (b.year - a.year) * 12 + b.month - a.month
 
 
-SMALL = {"de", "du", "des", "la", "le", "les", "et", "a", "au", "aux", "en", "sur", "sous", "l", "d", "pour", "par", "chez"}
-WORDS3 = {"sud", "est", "art", "eau", "air", "sol", "val", "mer", "bel", "bon", "neo", "eco", "pro", "duo", "top", "bio", "gaz",
-          "fer", "box", "lux", "max", "net", "one", "the", "and", "vie", "feu", "ile", "mon", "ma", "mes", "nos", "son", "sa", "ses",
-          "toi", "roi", "bas", "haut", "bois", "pin", "lac", "mas", "gex", "ain", "lot", "var", "cher", "eure", "oise", "orne",
-          "nord", "fil", "or", "an", "ans", "vos", "tous", "une", "un", "les", "plus", "via", "oui", "zen", "eko", "go", "my", "new",
-          "cie", "fils", "pere", "jean", "luc", "guy", "eric", "marc", "paul", "rene", "yves", "noel", "leo", "hugo", "theo", "tom"}
-KEEP = {"SARL", "SAS", "SASU", "EURL", "SA", "SCOP", "EIRL", "EI", "GIE", "SNC", "SCI", "BTP", "ENR", "PAC", "CVC", "VMC", "RGE",
-        "SCIC", "II", "III", "IV", "EDF", "ENGIE", "GDF", "SPIE", "ITE", "ITI", "MCM", "ACM", "TP", "SARLU", "SELARL", "SCP", "SEM"}
-ACC = {"renovation": "rénovation", "energie": "énergie", "energies": "énergies", "energetique": "énergétique", "batiment": "bâtiment",
-       "batiments": "bâtiments", "electricite": "électricité", "electrique": "électrique", "thermique": "thermique", "menuiserie": "menuiserie",
-       "economie": "économie", "ecologie": "écologie", "ecologique": "écologique", "habitat": "habitat", "chauffage": "chauffage",
-       "isolation": "isolation", "societe": "société", "etudes": "études", "etude": "étude", "freres": "frères", "metallerie": "métallerie",
-       "amenagement": "aménagement", "amenagements": "aménagements", "systemes": "systèmes", "systeme": "système", "geothermie": "géothermie",
-       "geothermique": "géothermique", "plomberie": "plomberie", "maconnerie": "maçonnerie", "cheminees": "cheminées", "cheminee": "cheminée",
-       "fenetres": "fenêtres", "fenetre": "fenêtre", "entreprise": "entreprise", "general": "général", "generale": "générale",
-       "electro": "électro", "climatisation": "climatisation", "facades": "façades", "facade": "façade", "solaire": "solaire",
-       "ingenierie": "ingénierie", "reseau": "réseau", "reseaux": "réseaux", "securite": "sécurité", "region": "région", "regional": "régional",
-       "isere": "Isère", "ardeche": "Ardèche", "drome": "Drôme", "lozere": "Lozère", "vendee": "Vendée", "correze": "Corrèze", "nievre": "Nièvre",
-       "ariege": "Ariège", "herault": "Hérault", "pyrenees": "Pyrénées", "bearn": "Béarn", "comte": "comté", "cote": "côte", "cotes": "côtes",
-       "a": "à", "ste": "Sté", "ets": "Éts", "etablissements": "établissements", "equipement": "équipement", "equipements": "équipements"}
+SMALL = set(REF["petits_mots"])
+WORDS3 = set(REF["mots_courts"])
+KEEP = set(REF["sigles"])
+ACC = REF["accents"]
 
 
 def nice(s, lower_first=False, acronyms=True):
@@ -93,10 +79,7 @@ def nice(s, lower_first=False, acronyms=True):
     return r[:1].upper() + r[1:] if not lower_first else r
 
 
-VOIES = {"rue", "avenue", "boulevard", "chemin", "route", "place", "allee", "allée", "impasse", "quai", "cours", "square", "passage",
-         "lieu", "dit", "lieu-dit", "faubourg", "promenade", "montee", "montée", "chaussee", "chaussée", "esplanade", "hameau", "residence",
-         "résidence", "cite", "cité", "sentier", "traverse", "villa", "domaine", "parc", "lotissement", "zone", "voie", "rond-point", "bis", "ter",
-         "quater", "bd", "av", "rte", "che", "imp", "all", "bat", "bât", "batiment", "bâtiment", "et", "centre", "parking", "pole", "pôle"}
+VOIES = set(REF["voies"])
 
 
 def nice_addr(s):
@@ -126,24 +109,15 @@ def website(u):
 TRAVAUX = json.load(open(os.path.join(ROOT, "src", "lib", "travaux.json"), encoding="utf-8"))
 DOM2T = {d: t["slug"] for t in TRAVAUX for d in t["domaines"]}
 
-EFFECTIFS = {"00": "0 salarié", "01": "1 ou 2 salariés", "02": "3 à 5 salariés", "03": "6 à 9 salariés", "11": "10 à 19 salariés",
-             "12": "20 à 49 salariés", "21": "50 à 99 salariés", "22": "100 à 199 salariés", "31": "200 à 249 salariés",
-             "32": "250 à 499 salariés", "41": "500 à 999 salariés", "42": "1 000 à 1 999 salariés", "51": "2 000 à 4 999 salariés",
-             "52": "5 000 à 9 999 salariés", "53": "10 000 salariés et plus"}
-CJ = {"1000": "Entrepreneur individuel", "5499": "SARL", "5498": "EURL (SARL à associé unique)", "5710": "SAS", "5720": "SASU (SAS à associé unique)",
-      "5599": "SA à conseil d'administration", "5699": "SA à directoire", "5202": "Société en nom collectif", "5306": "Société en commandite simple",
-      "5458": "SARL coopérative ouvrière de production (SCOP)", "5460": "SARL coopérative", "5560": "SA coopérative", "5785": "Société d'exercice libéral par actions simplifiée",
-      "5485": "Société d'exercice libéral à responsabilité limitée", "6540": "Société civile immobilière", "6599": "Autre société civile", "6589": "Société civile de moyens",
-      "9220": "Association déclarée", "6220": "GIE", "5800": "Société européenne", "5510": "SA à conseil d'administration", "5308": "Société en commandite par actions",
-      "7389": "Établissement public", "5385": "Société d'exercice libéral en commandite par actions", "5770": "SAS coopérative"}
+EFFECTIFS = REF["effectifs"]
+CJ = REF["formes_juridiques"]
 
 
 def cj_label(c):
     c = str(c or "")
     if c in CJ:
         return CJ[c]
-    return {"10": "Entrepreneur individuel", "54": "SARL", "57": "SAS", "55": "Société anonyme", "56": "Société anonyme", "52": "Société en nom collectif",
-            "65": "Société civile", "92": "Association", "53": "Société en commandite", "62": "Groupement d'intérêt économique"}.get(c[:2], "")
+    return REF["formes_juridiques_2"].get(c[:2], "")
 
 
 def load_communes():
@@ -505,7 +479,7 @@ def main():
 
     def order(ids):
         # sans point de vigilance d'abord, puis par ancienneté RGE, puis par nom
-        return sorted(ids, key=lambda i: (ent[i]["bad"], ent[i]["v"], ent[i]["since"] or "9999", ent[i]["nom"]))
+        return sorted(ids, key=lambda i: (ent[i]["bad"], ent[i]["v"], ent[i]["since"] or "9999", ent[i]["nom"], i))  # SIREN en dernier : ordre stable à noms égaux
 
     C = {}
     for code, ids in by_c.items():
@@ -548,6 +522,9 @@ def main():
         "n": N, "nest": sum(len(x["est"]) for x in ent.values()),
         "proc_ever": sum(1 for x in ent.values() if x["proc"]), "proc_open": sum(1 for x in ent.values() if x["k_proc"] == "bad"),
         "proc_plan": sum(1 for x in ent.values() if x["proc"] == "plan"),
+        "proc_k": dict(Counter(x["proc"] for x in ent.values() if x["k_proc"] == "bad")),
+        # au moins un signal de difficulté : procédure ou plan en cours, entreprise fermée, derniers comptes négatifs
+        "difficulte": sum(1 for x in ent.values() if x["k_proc"] == "bad" or x["proc"] == "plan" or x["k_ent"] == "bad" or x["k_cpt"] == "warn"),
         "exp90": sum(1 for x in ent.values() if x["k_rge"] == "warn"), "young": sum(1 for x in ent.values() if x["k_ent"] == "warn"),
         "cessee": sum(1 for x in ent.values() if x["k_ent"] == "bad"),
         "cpt": sum(1 for x in ent.values() if x["k_cpt"] in ("ok", "warn")), "cpt_neg": sum(1 for x in ent.values() if x["k_cpt"] == "warn"),

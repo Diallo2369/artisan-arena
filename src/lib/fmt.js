@@ -29,6 +29,12 @@ export function inCity(c) {
 }
 
 export const ficheUrl = (e) => `/entreprise/${e.slug}/`;
+// Adresse d'une fiche RGE calculée dans le navigateur : même règle que ent_slug() dans scripts/prepare_data.py
+const slugify = (s) => s.normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+export const entSlug = (nom, ville, siren) => [slugify(nom).slice(0, 60).replace(/^-+|-+$/g, ""), slugify(ville), siren].filter(Boolean).join("-");
+// Vérification à la demande d'un artisan qui n'a pas de fiche (hors liste RGE)
+export const artisanUrl = (siren) => `/artisan/?siren=${siren}`;
+export const artisanSearchUrl = (q) => `/artisan/?q=${encodeURIComponent(q)}`;
 export const communeUrl = (c) => `/artisans-rge/${c.slug}/`;
 export const depUrl = (d) => `/departement/${d.slug}/`;
 export const travauxUrl = (t, d) => (d ? `/travaux/${t}/${d.slug}/` : `/travaux/${t}/`);

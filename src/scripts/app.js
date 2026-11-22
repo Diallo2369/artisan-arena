@@ -1,5 +1,6 @@
 // Comportements du navigateur : menu, recherche, filtres et tri des listes, filtre des départements.
 // Les pages sont déjà complètes en HTML ; ce script n'ajoute que l'interactivité.
+import { entSlug, artisanUrl, artisanSearchUrl } from "../lib/fmt.js";
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -31,9 +32,6 @@ $("#sovX").addEventListener("click", closeSearch);
 sov.addEventListener("click", (e) => { if (e.target === sov) closeSearch(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !sov.hidden) closeSearch(); });
 
-// Adresse d'une fiche : même règle que ent_slug() dans scripts/prepare_data.py
-const slugify = (s) => s.normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-const entSlug = (nom, ville, siren) => [slugify(nom).slice(0, 60).replace(/^-+|-+$/g, ""), slugify(ville), siren].filter(Boolean).join("-");
 
 // ---------- index de recherche (chargé à la première frappe) ----------
 let IDX = null;
@@ -50,7 +48,9 @@ function match(q, I) {
   const digits = q.replace(/\s/g, "");
   if (/^\d{9,14}$/.test(digits)) { // SIREN ou SIRET : les 9 premiers chiffres désignent l'entreprise
     const s = digits.slice(0, 9);
-    return I.e.filter((e) => e.siren === s).map((e) => ({ t: "e", ...e }));
+    const f = I.e.filter((e) => e.siren === s).map((e) => ({ t: "e", ...e }));
+    // pas de fiche : vérification en direct, pour tout artisan
+    return f.length ? f : [{ t: "v", nom: `Vérifier l'entreprise ${s.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")}`, url: artisanUrl(s) }];
   }
   const n = norm(q);
   if (!n) return [];
@@ -60,7 +60,8 @@ function match(q, I) {
     for (const e of I.e) { if (e.k.startsWith(n)) { es.push({ t: "e", ...e }); if (es.length >= 6) break; } }
     if (es.length < 6 && n.length >= 3) for (const e of I.e) { if (!e.k.startsWith(n) && e.k.includes(n)) { es.push({ t: "e", ...e }); if (es.length >= 6) break; } }
   }
-  return cs.slice(0, es.length ? 3 : 6).concat(es);
+  const all = n.length >= 2 ? [{ t: "q", nom: `Chercher « ${q.trim()} » parmi tous les artisans`, url: artisanSearchUrl(q.trim()) }] : [];
+  return cs.slice(0, es.length ? 3 : 6).concat(es, all);
 }
 function wireSearch(form) {
   const input = $("input", form), box = $(".sugg", form);
@@ -68,8 +69,8 @@ function wireSearch(form) {
   const draw = () => {
     box.hidden = !items.length && !input.value.trim();
     input.setAttribute("aria-expanded", String(!box.hidden));
-    box.innerHTML = items.length ? items.map((it, i) => `<a role="option" id="${input.id}-o${i}" href="${it.url}" class="${i === cur ? "cur" : ""}" aria-selected="${i === cur}"><span><b>${esc(it.nom)}</b> ${it.t === "c" ? `(${it.dep})` : `· ${esc(it.ville)}`}</span><small>${it.t === "c" ? (it.n ? `${it.n} entreprise${it.n > 1 ? "s" : ""} RGE` : "Voir le département") : "Entreprise RGE"}</small></a>`).join("")
-      : input.value.trim() ? `<p class="none">${/^\d[\d\s]{8,}$/.test(input.value.trim()) ? "Aucune entreprise RGE avec ce numéro. Si l'artisan vous dit être RGE, demandez-lui son certificat et vérifiez-le auprès de l'organisme." : "Aucune entreprise RGE ni aucune commune trouvée."}</p>` : "";
+    box.innerHTML = items.length ? items.map((it, i) => `<a role="option" id="${input.id}-o${i}" href="${it.url}" class="${i === cur ? "cur" : ""}" aria-selected="${i === cur}"><span><b>${esc(it.nom)}</b> ${it.t === "c" ? `(${it.dep})` : it.t === "e" ? `· ${esc(it.ville)}` : ""}</span><small>${it.t === "c" ? (it.n ? `${it.n} entreprise${it.n > 1 ? "s" : ""}` : "Voir le département") : it.t === "e" ? "Fiche complète" : "En direct, services publics"}</small></a>`).join("")
+      : input.value.trim() ? `<p class="none">${/^\d[\d\s]*$/.test(input.value.trim()) ? "Un numéro SIREN a 9 chiffres, un SIRET 14." : "Aucune commune ni entreprise trouvée."}</p>` : "";
     input.setAttribute("aria-activedescendant", cur >= 0 ? `${input.id}-o${cur}` : "");
   };
   input.addEventListener("focus", () => index().catch(() => {}));
@@ -81,7 +82,7 @@ function wireSearch(form) {
     if (e.key === "ArrowDown" && items.length) { cur = (cur + 1) % items.length; draw(); e.preventDefault(); }
     else if (e.key === "ArrowUp" && items.length) { cur = (cur - 1 + items.length) % items.length; draw(); e.preventDefault(); }
   });
-  form.addEventListener("submit", (e) => { e.preventDefault(); if (items[cur]) location.href = items[cur].url; });
+  form.addEventListener("submit", (e) => { e.preventDefault(); const v = input.value.trim(); if (items[cur]) location.href = items[cur].url; else if (v.length >= 2) location.href = artisanSearchUrl(v); });
   document.addEventListener("click", (e) => { if (!form.contains(e.target)) { box.hidden = true; input.setAttribute("aria-expanded", "false"); } });
 }
 $$("[data-search]").forEach(wireSearch);
