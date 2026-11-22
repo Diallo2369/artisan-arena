@@ -9,7 +9,7 @@ const out = $("#lv-out"), band = $("#lv-search"), form = $("#lv-form");
 const params = new URLSearchParams(location.search);
 
 // les entreprises qui ont une fiche complète sur le site (index de la recherche)
-const index = fetch("/data/search.json").then((r) => r.json()).then((j) => ({ e: new Map(j.e.map((x) => [x[2], x])), d: j.d })).catch(() => ({ e: new Map(), d: {} }));
+const index = fetch("/data/search.json").then((r) => r.json()).then((j) => ({ e: new Map(j.e.map((x) => [x[2], x])), d: j.d })).catch(() => ({ e: new Map(), d: {}, failed: true }));
 const fiche = (x) => `/entreprise/${entSlug(x[0], x[1], x[2])}/`;
 
 async function get(url, ms = 15000) {
@@ -30,6 +30,9 @@ async function showSiren(raw) {
   if (known) return location.replace(fiche(known)); // l'entreprise a déjà sa fiche complète
   band.hidden = true;
   wait("Interrogation de l'Annuaire des entreprises, du BODACC et de l'INPI…");
+  // historique RGE : facultatif, la fiche s'affiche même si l'ADEME ne répond pas
+  const hq = (sort) => get(`${API.historique}?${qs({ qs: `siret:${siren}*`, size: 1, sort, select: "siret,nom_qualification,lien_date_debut,lien_date_fin,organisme" })}`).then((j) => (j.results || [])[0] || null);
+  const histP = I.failed ? Promise.resolve("indisponible") : Promise.all([hq("-lien_date_fin"), hq("lien_date_debut")]).then(([last, first]) => ({ last, first })).catch(() => null);
   let ue, bod, rat;
   try {
     [ue, bod, rat] = await Promise.all([
@@ -42,7 +45,7 @@ async function showSiren(raw) {
     return fail("Un des services publics ne répond pas pour le moment. Réessayez dans un instant.");
   }
   if (!ue) { band.hidden = false; return fail(`Aucune entreprise ne porte le numéro SIREN ${siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")} au répertoire Sirene. Vérifiez le numéro inscrit sur le devis.`, false); }
-  const e = fromLive(ue, bod, rat);
+  const e = fromLive(ue, bod, rat, new Date(), await histP);
   const dd = I.d[e.dep];
   document.title = `${e.nom} : procédures, comptes | Artisan Arena`;
   const other = e.si.section && e.si.section !== "F" && !e.si.nafl.startsWith("Travaux") ? `<p class="lv-note">Activité principale déclarée : ${esc(e.si.nafl || e.si.naf)}. Ce n'est pas une entreprise du bâtiment.</p>` : "";

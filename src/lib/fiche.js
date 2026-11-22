@@ -55,8 +55,12 @@ export function checks(e) {
   }
   // RGE
   if (e.rge === false) {
-    out.push({ k: "na", lab: "Qualification RGE", val: e.rgeAnnuaire ? "RGE d'après l'annuaire" : "Non RGE",
-      sub: e.rgeAnnuaire ? "Qualifiée très récemment : pas encore sur la liste de l'ADEME que nous lisons chaque semaine." : "Absente de la liste RGE de l'ADEME : pas d'aide publique à la rénovation énergétique avec cette entreprise." });
+    const h = e.rgeHist;
+    if (e.rgeAnnuaire) out.push({ k: "na", lab: "Qualification RGE", val: "RGE d'après l'annuaire", sub: "Qualifiée très récemment : pas encore sur la liste de l'ADEME que nous lisons chaque semaine." });
+    else if (e.rgeUnknown) out.push({ k: "na", lab: "Qualification RGE", val: "Vérification indisponible", sub: "La liste RGE n'a pas pu être consultée. Réessayez dans un instant." });
+    else if (h && h.fin) out.push({ k: h.recent ? "warn" : "na", lab: "Qualification RGE", val: "Plus RGE",
+      sub: `Qualifiée RGE ${h.debut && year(h.debut) !== year(h.fin) ? `de ${year(h.debut)} à ${year(h.fin)}` : `en ${year(h.fin)}`}${h.org ? ` (${org(h.org)})` : ""}. Dernière qualification expirée le ${dateFr(h.fin)}, non renouvelée : pas d'aide publique avec cette entreprise.` });
+    else out.push({ k: "na", lab: "Qualification RGE", val: "Non RGE", sub: "Jamais qualifiée RGE depuis 2014 d'après l'ADEME : pas d'aide publique à la rénovation énergétique avec cette entreprise." });
     return out;
   }
   const endTxt = noEnd(e.fin) ? "sans date de fin" : `jusqu'au ${dateFr(e.fin)}`;
@@ -133,7 +137,7 @@ export function renderFiche({ e, dep, near = [], devis = "" }) {
     ${acc("Les procédures collectives", e.bod.length ? `${e.bod.length} ${plural(e.bod.length, "jugement")} au BODACC` : "aucune publiée", proc, "procedures", true)}
     ${acc("L'entreprise", si ? (si.etat === "C" ? "cessée" : si.cree ? "créée en " + year(si.cree) : "active") : "non retrouvée", entreprise, "entreprise")}
     ${acc("Les comptes", e.cpt.length ? `${e.cpt.length} ${plural(e.cpt.length, "exercice")} publié${e.cpt.length > 1 ? "s" : ""}` : "non publiés", comptes, "comptes", e.k_cpt === "warn")}
-    ${e.rge === false ? acc("La qualification RGE", "non RGE", `<p class="tx">Cette entreprise ne figure pas sur la liste des entreprises RGE de l'ADEME. Pour des travaux de rénovation énergétique financés par MaPrimeRénov', l'éco-prêt à taux zéro ou les primes CEE, l'entreprise doit être qualifiée RGE pour ces travaux. Pour d'autres travaux, ce n'est pas nécessaire.</p>`, "rge")
+    ${e.rge === false ? acc("La qualification RGE", e.rgeHist?.fin ? `plus RGE depuis ${year(e.rgeHist.fin)}` : "non RGE", `${e.rgeHist?.fin ? `<p class="tx">Dernière qualification : ${esc(e.rgeHist.qual.replace(/[_"]/g, "").replace(/\s+/g, " "))}, ${e.rgeHist.org ? org(e.rgeHist.org) + ", " : ""}du ${dateFr(e.rgeHist.deb2)} au ${dateFr(e.rgeHist.fin)}. Si l'artisan se dit RGE, demandez-lui son certificat en cours de validité.</p>` : ""}<p class="tx">Cette entreprise ne figure pas sur la liste des entreprises RGE de l'ADEME. Pour des travaux de rénovation énergétique financés par MaPrimeRénov', l'éco-prêt à taux zéro ou les primes CEE, l'entreprise doit être qualifiée RGE pour ces travaux. Pour d'autres travaux, ce n'est pas nécessaire.</p>`, "rge")
       : acc("Les qualifications RGE", `${e.q.length} · ${e.t.length} ${plural(e.t.length, "type")} de travaux`, quals, "rge")}
     ${acc(e.live ? "Siège" : "Coordonnées", e.live ? "adresse" : `${e.est.length} ${plural(e.est.length, "établissement")}`, ests, "coordonnees")}
   </div>
@@ -150,6 +154,7 @@ ${nearHtml}`;
 // scripts/check_live.mjs compare les deux versions sur toutes les entreprises RGE.
 export const API = {
   annuaire: "https://recherche-entreprises.api.gouv.fr/search",
+  historique: "https://data.ademe.fr/data-fair/api/v1/datasets/historique-rge/lines",
   bodacc: "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records",
   ratios: "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/ratios_inpi_bce/records",
 };
@@ -259,7 +264,8 @@ export function comptes(rows, today) {
 }
 
 // Entreprise lue dans l'annuaire (recherche-entreprises.api.gouv.fr) + BODACC + INPI : même forme que les entreprises de site.json
-export function fromLive(ue, bod, rat, today = new Date()) {
+// hist : la qualification qui finit le plus tard et la toute première, dans l'historique RGE de l'ADEME (depuis 2014)
+export function fromLive(ue, bod, rat, today = new Date(), hist = null) {
   const sg = ue.siege || {}, siren = ue.siren;
   const ville = nice(sg.libelle_commune || "");
   const pp = String(ue.nature_juridique || "") === "1000";
@@ -283,6 +289,10 @@ export function fromLive(ue, bod, rat, today = new Date()) {
       section: ue.section_activite_principale || "", pp, cess: etat === "C" ? ue.date_fermeture || "" : "" },
     k_ent: etat === "C" ? "bad" : age != null && age < 24 ? "warn" : "ok",
     cpt, k_cpt: kCpt,
+    rgeUnknown: hist === "indisponible",
+    rgeHist: hist && hist.last ? { fin: hist.last.lien_date_fin, deb2: hist.last.lien_date_debut, debut: hist.first?.lien_date_debut || hist.last.lien_date_debut,
+      org: hist.last.organisme && hist.last.organisme !== "Non renseigné" ? hist.last.organisme : "", qual: hist.last.nom_qualification || "",
+      recent: monthsBetween(isoDate(hist.last.lien_date_fin), today) <= 24 } : null,
   };
   e.v = [e.k_proc, e.k_ent, e.k_cpt].filter((k) => k === "warn" || k === "bad").length;
   return e;
