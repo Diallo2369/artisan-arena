@@ -13,7 +13,7 @@ const { meta } = load();
 const ogImage = SITE_URL && fs.existsSync("public/og.png") ? SITE_URL + "/og.png" : "";
 const canonical = SITE_URL ? SITE_URL + Astro.url.pathname : null;
 const fullTitle = page === "home" ? title : `${title} | ${SITE_NAME}`;
-const nav = [["travaux", "/travaux/", "Travaux"], ["verifier", "/verifier-un-artisan/", "Avant de signer"], ["about", "/a-propos/", "À propos"]];
+const nav = [["travaux", "/travaux/", "Travaux"], ["prix", "/prix-des-materiaux/", "Prix des matériaux"], ["verifier", "/verifier-un-artisan/", "Avant de signer"], ["about", "/a-propos/", "À propos"]];
 const search = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
 ---
 <!doctype html>
@@ -54,6 +54,7 @@ const search = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stro
     <a href="/">Accueil</a>
     <button type="button" id="menuFind">Rechercher une entreprise</button>
     <a href="/travaux/">Les travaux</a>
+    <a href="/prix-des-materiaux/">Prix des matériaux</a>
     <a href="/verifier-un-artisan/">Avant de signer</a>
     <a href="/a-propos/">À propos</a>
   </nav>
@@ -69,8 +70,8 @@ const search = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stro
   </aside>
   <footer>
     <div class="wrap">
-      <nav><a href="/">Accueil</a><a href="/travaux/">Les travaux</a><a href="/verifier-un-artisan/">Avant de signer</a><a href="/a-propos/">À propos</a><a href="/mentions-legales/">Mentions légales</a><a href="/confidentialite/">Confidentialité</a></nav>
-      <p>Qualifications : ADEME, liste des entreprises RGE ({dateFr(meta.rge)}). Procédures collectives : BODACC. Entreprises : répertoire Sirene de l'INSEE. Comptes : ratios financiers INPI. Données recalculées le {dateFr(meta.built)}.</p>
+      <nav><a href="/">Accueil</a><a href="/travaux/">Les travaux</a><a href="/prix-des-materiaux/">Prix des matériaux</a><a href="/verifier-un-artisan/">Avant de signer</a><a href="/a-propos/">À propos</a><a href="/mentions-legales/">Mentions légales</a><a href="/confidentialite/">Confidentialité</a></nav>
+      <p>Qualifications : ADEME, liste des entreprises RGE ({dateFr(meta.rge)}). Procédures collectives : BODACC. Entreprises : répertoire Sirene de l'INSEE. Comptes : ratios financiers INPI. Prix des matériaux : INSEE. Données recalculées le {dateFr(meta.built)}.</p>
       <p>Aucune inscription, aucun cookie, jamais de mise en avant payée par une entreprise. Contact : <span class="sel">{CONTACT}</span></p>
     </div>
   </footer>

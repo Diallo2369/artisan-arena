@@ -5,6 +5,7 @@
 - INSEE : base Sirene des unités légales (état, date de création, forme juridique, effectif).
 - DILA : BODACC, avis de procédures collectives des entreprises RGE.
 - INPI / BCE : ratios financiers des comptes déposés par les entreprises RGE.
+- INSEE : prix de production des matériaux et index du bâtiment (articles « Prix des matériaux »).
 
 Le BODACC et les ratios sont interrogés par lots de SIREN : seules les entreprises RGE sont téléchargées.
 En cas d'échec d'un service, le fichier de la publication précédente (cache) est conservé.
@@ -146,6 +147,34 @@ def by_siren(base, field, sirens, select, extra="", size=350):
     return out
 
 
+# ---------- INSEE : prix des matériaux (IPPI) et index du bâtiment (BT), séries mensuelles ----------
+# Banque de données macro-économiques, service SDMX ouvert sans clé. Les séries suivies sont dans src/lib/prix.json.
+BDM = "https://bdm.insee.fr/series/sdmx/data/SERIES_BDM/"
+
+
+def fetch_prix():
+    import re
+    cfg = json.load(open(os.path.join(os.path.dirname(__file__), "..", "src", "lib", "prix.json"), encoding="utf-8"))
+    ids = [s["id"] for f in cfg["familles"] for s in f["series"]] + [m["id"] for m in cfg["metiers"]]
+    out = {}
+    for i in range(0, len(ids), 20):
+        xml = get(BDM + "+".join(ids[i:i + 20]) + "?startPeriod=2020-01").decode("utf-8")
+        for head, body in re.findall(r"<Series ([^>]*)>(.*?)</Series>", xml, re.S):
+            a = dict(re.findall(r'(\w+)="([^"]*)"', head))
+            obs = {}
+            for o in re.findall(r"<Obs ([^>]*)/>", body):
+                o = dict(re.findall(r'(\w+)="([^"]*)"', o))
+                v = o.get("OBS_VALUE")
+                if v and v != "NaN":
+                    obs[o["TIME_PERIOD"]] = [float(v), o.get("OBS_STATUS", "")]
+            out[a["IDBANK"]] = {"titre": a.get("TITLE_FR", ""), "obs": dict(sorted(obs.items()))}
+    missing = [i for i in ids if i not in out]
+    if missing:
+        raise RuntimeError(f"séries INSEE absentes : {missing}")
+    save("prix.json", out)
+    return {"series": len(out), "last": max(max(s["obs"]) for s in out.values() if s["obs"])}
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     mf = os.path.join(OUT, "manifest.json")
@@ -182,6 +211,14 @@ def main():
             manifest[key] = m
         except RuntimeError:
             if not keep_previous(fname, label):
+                raise
+
+    if run("prix"):
+        print("INSEE : prix des matériaux et index du bâtiment")
+        try:
+            manifest["prix"] = fetch_prix()
+        except RuntimeError:
+            if not keep_previous("prix.json", "INSEE"):
                 raise
 
     with open(mf, "w") as f:

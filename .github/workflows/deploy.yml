@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # pour enregistrer les chiffres figés des articles « Prix des matériaux »
   pages: write
   id-token: write
 
@@ -49,12 +49,22 @@ jobs:
           path: data/raw
           key: raw-${{ github.run_id }}
           restore-keys: raw-
-      - name: Télécharger les données (ADEME, Sirene, BODACC, INPI)
+      - name: Télécharger les données (ADEME, Sirene, BODACC, INPI, INSEE)
         run: npm run data:fetch
       - name: Préparer les données
         run: npm run data:prepare
       - name: Construire le site (avec contrôle des données)
         run: npm run build
+      # Un nouveau mois publié par l'INSEE donne un nouvel instantané data/prix/AAAA-MM.json : on le garde dans le dépôt,
+      # pour que l'article de ce mois ne change plus. (Un envoi fait avec GITHUB_TOKEN ne relance pas ce workflow.)
+      - name: Enregistrer les nouveaux mois des prix des matériaux
+        run: |
+          git add data/prix
+          if git diff --cached --quiet; then echo "Aucun nouveau mois"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Prix des matériaux : $(git diff --cached --name-only | xargs -n1 basename | sed 's/.json//' | tr '\n' ' ')"
+          git pull --rebase origin main && git push origin HEAD:main
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

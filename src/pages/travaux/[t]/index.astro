@@ -2,6 +2,7 @@
 import Base from "../../../layouts/Base.astro";
 import { renderTravaux, seo } from "../../../lib/core.js";
 import { load, TRAVAUX } from "../../../lib/data.js";
+import { travauxCost } from "../../../lib/prix.js";
 
 export function getStaticPaths() {
   const { nat } = load();
@@ -14,5 +15,5 @@ const n = s.nat.tc[t.slug];
 const m = seo("travaux", { t, n });
 ---
 <Base title={m.title} description={m.desc} page="travaux">
-  <Fragment set:html={renderTravaux({ t, deps, n })} />
+  <Fragment set:html={renderTravaux({ t, deps, n }) + travauxCost(t.slug)} />
 </Base>

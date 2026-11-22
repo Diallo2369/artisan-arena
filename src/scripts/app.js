@@ -104,12 +104,16 @@ $$("[data-list]").forEach((wrap) => {
     const c = $("[data-count]", wrap); if (c) c.textContent = l.length;
     const none = $(".empty", wrap); if (none) none.hidden = l.length > 0;
   }
-  $$("[data-dom]", wrap).forEach((b) => b.addEventListener("click", () => { dom = b.dataset.dom; shown = STEP; $$("[data-dom]", wrap).forEach((x) => x.setAttribute("aria-pressed", String(x === b))); apply(); }));
+  const ds = $("[data-dom]", wrap); // liste déroulante des travaux
+  if (ds) ds.addEventListener("change", () => { dom = ds.value; shown = STEP; apply(); });
   const cb = $("[data-clean]", wrap);
   if (cb) cb.addEventListener("click", () => { clean = !clean; shown = STEP; cb.setAttribute("aria-pressed", String(clean)); apply(); });
   const s = $("[data-sort]", wrap);
   if (s) s.addEventListener("change", () => { ordre = s.value; apply(); });
   if (more) $("button", more).addEventListener("click", () => { shown += STEP * 4; apply(); });
+  // au retour sur la page, le navigateur peut avoir gardé les choix des listes déroulantes
+  if (ds) dom = ds.value;
+  if (s) ordre = s.value;
   apply();
 });
 

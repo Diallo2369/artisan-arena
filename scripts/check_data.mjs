@@ -27,4 +27,22 @@ for (const c of Object.values(s.communes)) if (!c.slug || !c.n) fail(`commune vi
 // Les grandes villes doivent être là
 for (const code of ["75056", "13055", "69123", "31555", "06088", "44109", "35238", "15014"]) if (!s.communes[code]?.n) fail(`grande ville sans entreprise RGE : ${code}`);
 if (s.nat.proc_open > E.length * 0.05) fail(`trop de procédures en cours (${s.nat.proc_open}) : classement des jugements à revoir`);
-console.log(`Données OK : ${E.length} entreprises, ${s.nat.nest} établissements, ${s.nat.proc_ever} avec un jugement, ${s.nat.proc_open} en cours, ${Object.keys(s.communes).length} communes.`);
+// Prix des matériaux : un instantané par mois depuis le début, aucun trou, dernier mois récent
+const PC = JSON.parse(fs.readFileSync("src/lib/prix.json", "utf-8"));
+const pids = [...PC.familles.flatMap((f) => f.series.map((x) => x.id)), ...PC.metiers.map((x) => x.id)];
+const snaps = fs.existsSync("data/prix") ? fs.readdirSync("data/prix").filter((f) => /^\d{4}-\d{2}\.json$/.test(f)).sort() : [];
+if (!snaps.length) fail("aucun instantané dans data/prix (lancez npm run data:prepare)");
+const nextM = (m) => { let [y, mo] = m.split("-").map(Number); mo++; if (mo > 12) { mo = 1; y++; } return `${y}-${String(mo).padStart(2, "0")}`; };
+let expect = PC.debut;
+for (const f of snaps) {
+  const m = f.slice(0, 7);
+  if (m !== expect) fail(`mois manquant dans data/prix : ${expect}`);
+  const sn = JSON.parse(fs.readFileSync("data/prix/" + f, "utf-8"));
+  const have = pids.filter((id) => sn.s[id]?.v?.at(-1) != null).length;
+  if (have < pids.length * 0.9) fail(`instantané ${m} incomplet : ${have} séries sur ${pids.length}`);
+  expect = nextM(m);
+}
+const lastP = snaps.at(-1).slice(0, 7);
+const limit = new Date(); limit.setMonth(limit.getMonth() - 5);
+if (lastP < limit.toISOString().slice(0, 7)) fail(`prix des matériaux trop anciens : dernier mois ${lastP}`);
+console.log(`Données OK : ${E.length} entreprises, ${s.nat.nest} établissements, ${s.nat.proc_ever} avec un jugement, ${s.nat.proc_open} en cours, ${Object.keys(s.communes).length} communes, prix des matériaux jusqu'à ${lastP}.`);

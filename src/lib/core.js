@@ -335,6 +335,7 @@ export function renderAbout({ contact, nat, meta }) {
     ["Procédures", "BODACC", "Direction de l'information légale et administrative", "Les jugements de sauvegarde, de redressement, de liquidation judiciaire et de clôture, publiés depuis 2008.", `Consulté le ${dateFr(meta.bodacc)}`, DG + "bodacc/"],
     ["Entreprises", "Sirene", "INSEE", "L'état de l'entreprise, sa date de création, sa forme juridique et sa tranche d'effectif.", esc(meta.sirene), DG + "base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/"],
     ["Comptes", "INPI", "Institut national de la propriété industrielle", "Les ratios financiers calculés sur les comptes annuels déposés et publiés.", `Consulté le ${dateFr(meta.ratios)}`, DG + "ratios-financiers-bce-inpi/"],
+    ["Prix", "INSEE", "Institut national de la statistique et des études économiques", "Les indices de prix de production des matériaux et les index du bâtiment (BT), pour les articles « Prix des matériaux ».", "Publiés chaque mois", "https://www.insee.fr/fr/information/2868055"],
   ];
   const TOC = [["pourquoi", "Pourquoi ce site"], ["sources", "D'où viennent les données"], ["verifications", "Les quatre vérifications"], ["limites", "Ce que le site ne dit pas"], ["engagements", "Nos engagements"], ["erreur", "Signaler une erreur"]];
   return `<section class="band"><div class="wrap"><h1>À propos d'Artisan Arena</h1><p class="lede">Pourquoi ce site, d'où viennent les données et comment les vérifications sont faites.</p></div></section>

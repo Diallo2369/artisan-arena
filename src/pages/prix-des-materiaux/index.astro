@@ -1,0 +1,7 @@
+---
+import Base from "../../layouts/Base.astro";
+import { renderPrixHub } from "../../lib/prix.js";
+---
+<Base title="Prix des matériaux de construction : l'évolution chaque mois" description="Bois, peinture, ciment, cuivre, tuiles, carrelage : l'évolution mensuelle du prix des matériaux et du coût des travaux par métier, d'après les indices de l'INSEE." page="prix">
+  <Fragment set:html={renderPrixHub()} />
+</Base>
