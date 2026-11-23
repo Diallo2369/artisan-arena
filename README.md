@@ -8,7 +8,8 @@
 npm run data:fetch    → scripts/fetch_data.py    télécharge dans data/raw/ (hors dépôt)
 npm run data:prepare  → scripts/prepare_data.py  produit data/build/site.json et public/data/search.json
                         scripts/prix_snapshots.py fige les chiffres du mois dans data/prix/AAAA-MM.json
-npm run build         → scripts/check_data.mjs (bloque si les volumes sont anormaux), scripts/check_live.mjs (règles JavaScript = règles Python),
+npm run build         → scripts/ensure_data.mjs (sans data/build/site.json : crée .venv avec pyarrow, télécharge et prépare tout),
+                        scripts/check_data.mjs (bloque si les volumes sont anormaux), scripts/check_live.mjs (règles JavaScript = règles Python),
                         astro build, scripts/postbuild.mjs
 ```
 
@@ -80,5 +81,7 @@ Pour réécrire un mois avec les chiffres révisés : supprimer son fichier dans
 - Taille du site : 73 700 pages (56 400 fiches, 15 200 communes, 1 900 pages travaux × département), environ 915 Mo. La limite de GitHub Pages est 1 Go : surveiller la taille à chaque ajout dans les fiches.
 - En local, Astro 7 demande Node 22 ou plus. Le verrou npm vient d'ehpad-arena (Linux) : sur Mac, ajouter les modules natifs `darwin-arm64` d'Astro, rolldown, lightningcss et satteri avec `npm i --no-save`.
 - Python : `pyarrow` est nécessaire pour lire Sirene (`python3 -m venv .venv && .venv/bin/pip install pyarrow`).
+- `npm run build` sans données (dépôt fraîchement cloné) : `scripts/ensure_data.mjs` crée `.venv` avec pyarrow (`requirements.txt`), télécharge et prépare tout ; `DATA_REFRESH=1 npm run build` force un nouveau téléchargement. Sur GitHub Actions, les données sont prêtes avant le build : rien n'est refait.
+- Liste RGE tronquée par l'ADEME (aucune ligne Qualibat, ou moins de 80 % des lignes de la publication précédente) : elle est refusée et la dernière liste valide du cache est gardée ; le site affiche la date de cette liste.
 - Pages « noindex » : entrepreneurs individuels en diffusion partielle au répertoire Sirene, communes et pages travaux × département d'une seule entreprise.
 - Données personnelles : les adresses e-mail de la liste RGE ne sont pas reprises. Les jugements du BODACC sont affichés tels que publiés, avec un lien vers l'annonce.

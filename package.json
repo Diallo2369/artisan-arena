@@ -12,7 +12,7 @@
     "data:prepare": "python3 scripts/prepare_data.py && python3 scripts/prix_snapshots.py",
     "data:check": "node scripts/check_data.mjs",
     "dev": "astro dev",
-    "build": "node scripts/check_data.mjs && node scripts/check_live.mjs && astro build && node scripts/postbuild.mjs",
+    "build": "node scripts/ensure_data.mjs && node scripts/check_data.mjs && node scripts/check_live.mjs && astro build && node scripts/postbuild.mjs",
     "preview": "astro preview"
   },
   "dependencies": {

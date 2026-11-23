@@ -77,6 +77,21 @@ def keep_previous(name, step):
 
 
 # ---------- RGE : liste actuelle ----------
+# L'ADEME publie parfois une liste tronquée (le 23 novembre 2026 : aucune ligne Qualibat, 63 699 lignes au lieu de
+# 156 682). Une telle liste est refusée : la dernière liste valide (cache) est gardée, avec sa date de mise à jour.
+RGE_MIN_RATIO = 0.8  # une nouvelle liste doit avoir au moins 80 % des lignes de la précédente
+
+
+def check_rge(rows):
+    orgs = {(r.get("organisme") or "").lower() for r in rows}
+    if "qualibat" not in orgs:
+        raise RuntimeError(f"liste RGE incomplète : aucune ligne Qualibat ({len(rows)} lignes)")
+    mf = os.path.join(OUT, "manifest.json")
+    prev = (json.load(open(mf)).get("rge", {}).get("lines") if os.path.exists(mf) else None) or 0
+    if prev and len(rows) < prev * RGE_MIN_RATIO:
+        raise RuntimeError(f"liste RGE incomplète : {len(rows)} lignes contre {prev} à la publication précédente")
+
+
 def fetch_rge():
     meta = getj(RGE)
     url = f"{RGE}/lines?size=10000&select={','.join(RGE_FIELDS)}"
@@ -91,6 +106,7 @@ def fetch_rge():
         raise RuntimeError(f"liste RGE incomplète : {len(rows)} lignes sur {total}")
     for r in rows:
         r.pop("_score", None)
+    check_rge(rows)
     save("rge.json", rows)
     return {"updated": (meta.get("dataUpdatedAt") or meta.get("updatedAt") or "")[:10], "lines": len(rows)}
 
@@ -186,9 +202,11 @@ def main():
         print("ADEME : entreprises RGE")
         try:
             manifest["rge"] = fetch_rge()
-        except RuntimeError:
+        except RuntimeError as e:
+            print(f"  {e}", file=sys.stderr)
             if not keep_previous("rge.json", "ADEME"):
                 raise
+            print(f"  liste RGE conservée : mise à jour ADEME du {manifest.get('rge', {}).get('updated', '?')}", file=sys.stderr)
     sirens = sorted({r["siret"][:9] for r in json.load(open(os.path.join(OUT, "rge.json"), encoding="utf-8")) if r.get("siret")})
 
     steps = [
