@@ -16,21 +16,31 @@ const setMenu = (o) => { menu.hidden = !o; burger.setAttribute("aria-expanded", 
 burger.addEventListener("click", () => setMenu(menu.hidden));
 menu.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
 
-// ---------- recherche plein écran (créée au premier usage, pour alléger chaque page) ----------
+// ---------- fenêtre de recherche (même modèle que les autres sites Arena) ----------
 const SEARCH_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
 const sov = document.createElement("div");
 sov.className = "sov"; sov.id = "sov"; sov.hidden = true;
-sov.setAttribute("role", "dialog"); sov.setAttribute("aria-modal", "true"); sov.setAttribute("aria-label", "Rechercher une entreprise ou une commune");
-sov.innerHTML = `<div class="sov-panel wrap"><form class="search" role="search" action="/" data-search>${SEARCH_SVG}<input id="q2" type="search" autocomplete="off" enterkeyhint="search" placeholder="Nom, SIRET ou commune" aria-label="Nom de l'entreprise, numéro SIRET ou commune" role="combobox" aria-expanded="false" aria-controls="q2-s" aria-autocomplete="list"><div id="q2-s" class="sugg" role="listbox" hidden></div></form><button type="button" class="btn ghost on-dark" id="sovX">Fermer</button></div>`;
+sov.innerHTML = `<div class="sov-box" role="dialog" aria-modal="true" aria-labelledby="sov-t"><div class="sov-head"><p class="sov-t" id="sov-t">Quel artisan ?</p><button type="button" class="sov-x" id="sovX">Fermer</button></div><form class="search" role="search" action="/" data-search>${SEARCH_SVG}<input id="q2" type="search" autocomplete="off" enterkeyhint="search" placeholder="Nom, SIRET ou commune" aria-label="Nom de l'entreprise, numéro SIRET ou commune" role="combobox" aria-expanded="false" aria-controls="q2-s" aria-autocomplete="list"><div id="q2-s" class="sugg" role="listbox" hidden></div></form><p class="sov-hint">Un nom ou un numéro SIRET ouvre la vérification de l'entreprise ; une commune ouvre la liste de ses artisans.</p></div>`;
 document.body.append(sov);
+const homeForm = $("#q")?.closest("form");
 let lastFocus = null;
-const openSearch = () => { lastFocus = document.activeElement; setMenu(false); sov.hidden = false; document.body.classList.add("noscroll"); $("#q2").focus(); index().catch(() => {}); };
-const closeSearch = () => { sov.hidden = true; document.body.classList.remove("noscroll"); if (lastFocus) lastFocus.focus(); };
-$("#findBtn").addEventListener("click", () => { const q = $("#q"); if (q) { q.focus(); q.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" }); } else openSearch(); });
+const openSearch = () => { lastFocus = document.activeElement; setMenu(false); sov.hidden = false; document.body.classList.add("noscroll"); const q = $("#q2"); q.value = ""; q.dispatchEvent(new Event("input")); setTimeout(() => q.focus(), 30); index().catch(() => {}); };
+const closeSearch = () => { sov.hidden = true; document.body.classList.remove("noscroll"); (lastFocus?.isConnected ? lastFocus : $("#findBtn")).focus(); };
+$("#findBtn").addEventListener("click", openSearch);
 $("#menuFind").addEventListener("click", openSearch);
 $("#sovX").addEventListener("click", closeSearch);
 sov.addEventListener("click", (e) => { if (e.target === sov) closeSearch(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !sov.hidden) closeSearch(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !sov.hidden) closeSearch();
+  else if (e.key === "/" && sov.hidden && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable) { e.preventDefault(); openSearch(); }
+});
+// bouton flottant (mobile) : masqué tant que la recherche de la page d'accueil est à l'écran ou plus bas
+const fab = document.createElement("button");
+fab.type = "button"; fab.id = "fab";
+fab.innerHTML = `${SEARCH_SVG}Vérifier un artisan`;
+fab.addEventListener("click", openSearch);
+document.body.append(fab);
+if (homeForm && "IntersectionObserver" in window) { fab.classList.add("off"); new IntersectionObserver((es) => es.forEach((en) => fab.classList.toggle("off", en.isIntersecting || en.boundingClientRect.top > 0))).observe(homeForm); }
 
 
 // ---------- index de recherche (chargé à la première frappe) ----------
