@@ -34,7 +34,7 @@ Pour ajouter un métier ou un synonyme : `src/lib/metiers.js`, puis un cas dans 
 - l'INPI, ratios financiers (data.economie.gouv.fr) : comptes ;
 - l'ADEME, historique RGE depuis 2014 (facultatif : la fiche s'affiche sans).
 
-Les règles des vérifications et la mise en page sont dans `src/lib/fiche.js`. La fiche renvoie vers les avis Google et PagesJaunes sans les reprendre. Les pages de recherche et les fiches sont fermées aux moteurs de recherche.
+Les règles des vérifications et la mise en page sont dans `src/lib/fiche.js`. Les pages de recherche et les fiches sont fermées aux moteurs de recherche.
 
 ## Où modifier quoi
 

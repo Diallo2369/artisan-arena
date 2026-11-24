@@ -71,7 +71,9 @@ img,svg{flex:none}
 .hl{color:inherit} /* « bon artisan » : pas de surlignage */
 .hero-search{margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
 .hs-field{flex:1 1 360px;display:flex;align-items:center;gap:12px;padding:0 14px;color:var(--soft);background:var(--surface);border:1px solid var(--ink);border-radius:var(--r)}
-.hs-field:focus-within{box-shadow:0 0 0 4px var(--sun)}
+.hs-field:focus-within,.top-search:focus-within{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+/* un seul indicateur de focus : la bordure de la boîte, pas de second contour autour du champ */
+.hs-field input:focus,.hs-field input:focus-visible,.top-search input:focus,.top-search input:focus-visible{outline:0;box-shadow:none}
 .hs-field input{flex:1;min-width:0;border:0;outline:none;background:transparent;color:var(--ink);font:400 1.15rem var(--text);height:54px}
 .hs-field input::-webkit-search-cancel-button{display:none}
 .hero-search .btn.big{min-height:56px}
@@ -161,9 +163,6 @@ img,svg{flex:none}
 .ic{width:20px;height:20px;border-radius:var(--r);display:inline-grid;place-items:center;font:700 .75rem var(--display);font-style:normal;background:var(--na-bg);color:var(--na)}
 .ic.ok{background:var(--ok-bg);color:var(--ok)}.ic.ok::before{content:"✓"}
 .ic.warn{background:var(--warn-bg);color:var(--warn)}.ic.bad{background:var(--bad-line);color:#fff}
-.avis{background:var(--surface);border:var(--border);padding:24px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
-.avis p{color:var(--muted);margin-top:6px;max-width:520px}
-.avis-b{display:flex;gap:10px;flex-wrap:wrap}
 .acc{margin-top:20px;display:flex;flex-direction:column;gap:0;background:var(--surface);border:var(--border)}
 .acc-i+.acc-i{border-top:var(--border)}
 .acc-i summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 20px;min-height:56px}
@@ -262,4 +261,4 @@ th{font-weight:600;color:var(--muted);font-size:.85rem;background:var(--surface-
   .top-nav{gap:0}.top-nav a{padding:8px 7px;font-size:.88rem}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media print{.top,.foot,.avis,.devis,.rs-chips{display:none!important}body{background:#fff}}
+@media print{.top,.foot,.devis,.rs-chips{display:none!important}body{background:#fff}}

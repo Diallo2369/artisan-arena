@@ -81,9 +81,6 @@ export const beforeList = () => `<ol class="todo">${BEFORE.map(([b, s]) => `<li>
 
 const monthsSince = (iso, today = new Date()) => (iso ? monthsBetween(isoDate(iso), today) : null);
 export const ageTxt = (m) => (m == null ? "" : m < 1 ? "moins d'un mois" : m < 24 ? `${m} mois` : `${Math.floor(m / 12)} ans`);
-const MAPS = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-const PJ = (nom, ville) => `https://www.pagesjaunes.fr/annuaire/chercherlespros?${new URLSearchParams({ quoiqui: nom, ou: ville })}`;
-const ARROW = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>';
 
 export function renderFiche({ e, devis = "", autres = "" }) {
   const cs = checks(e);
@@ -119,10 +116,8 @@ export function renderFiche({ e, devis = "", autres = "" }) {
     : age != null ? `<div class="fh-age"><span>Créée il y a</span><b>${ageTxt(age)}</b><span>le ${dateFr(si.cree)}</span></div>` : "";
   const bad = cs.filter((c) => c.k === "bad");
   const notice = bad.length ? `<div class="fh-note bad"><b>Alerte.</b> ${summary(e, cs).replace(/^<b>Alerte :<\/b> /, "")}</div>`
-    : age != null && age < 24 && si.etat !== "C" ? `<div class="fh-note"><b>Entreprise récente.</b> Elle a peu d'historique : ses avis en ligne portent forcément sur peu de chantiers${si.pp ? "" : ", et elle a peu ou pas de comptes publiés"}.</div>`
+    : age != null && age < 24 && si.etat !== "C" ? `<div class="fh-note"><b>Entreprise récente.</b> Elle a peu d'historique : peu de chantiers derrière elle${si.pp ? "" : ", et peu ou pas de comptes publiés"}. Demandez des références de chantiers récents.</div>`
     : `<p class="fh-verdict">${summary(e, cs)}</p>`;
-  const ville = e.ville || "";
-  const nomAvis = e.nom.startsWith("Entrepreneur individuel") ? "" : e.nom;
 
   return `<section class="fh"><div class="wrap">
   <div class="fh-card">
@@ -138,8 +133,6 @@ export function renderFiche({ e, devis = "", autres = "" }) {
   <div class="checks">${cs.map((c, i) => `<div class="chk ${c.k}" style="--i:${i}"><span class="lab">${ic(c.k)}${c.lab}</span><span class="val">${c.val}</span><span class="sub">${c.sub}</span></div>`).join("")}</div>
 </div></section>
 <section class="block"><div class="wrap">
-  ${nomAvis ? `<div class="avis"><div><h2>Ses avis en ligne</h2><p>Nous ne reprenons pas les avis : lisez-les à la source${age != null && age < 24 ? ", en gardant en tête que l'entreprise a moins de 2 ans" : ""}.</p></div>
-    <div class="avis-b"><a class="btn" href="${MAPS(nomAvis + " " + ville)}" target="_blank" rel="noopener nofollow">Voir les avis Google ${ARROW}</a><a class="btn ghost" href="${PJ(nomAvis, ville)}" target="_blank" rel="noopener nofollow">Voir les avis PagesJaunes ${ARROW}</a></div></div>` : ""}
   <div class="acc">
     ${acc("Les procédures collectives", e.bod.length ? `${e.bod.length} ${plural(e.bod.length, "jugement")} au BODACC` : "aucune publiée", proc, "procedures", e.k_proc !== "ok")}
     ${acc("L'entreprise", si.etat === "C" ? "cessée" : si.cree ? "créée en " + year(si.cree) : "active", entreprise, "entreprise")}
