@@ -1,0 +1,28 @@
+---
+import Base from "../../layouts/Base.astro";
+import { devisBlock, assuranceBlock } from "../../lib/partenaires.js";
+---
+<Base title="Avant de signer un devis : les bons réflexes" description="Procédures collectives, ancienneté, comptes, assurance décennale, acompte et délai de rétractation : ce qu'il faut vérifier avant de signer le devis d'un artisan." page="avant">
+  <section class="page-h"><div class="wrap">
+    <p class="kicker">Le guide</p>
+    <h1>Avant de signer un devis</h1>
+    <p class="lede">Cinq vérifications, dans l'ordre. Les trois premières se lisent sur la fiche de l'artisan ; les deux dernières, en une question à l'artisan.</p>
+  </div></section>
+  <section class="block"><div class="wrap"><div class="prose">
+    <h2><span class="num-b">1</span>Les procédures collectives</h2>
+    <p>Une entreprise en difficulté peut être placée par le tribunal en sauvegarde, en redressement ou en liquidation judiciaire. Chaque jugement est publié au Bulletin officiel des annonces civiles et commerciales (BODACC). Une entreprise en redressement peut continuer à travailler ; mais si elle disparaît, l'acompte versé devient une créance à déclarer, rarement remboursée en entier.</p>
+    <h2><span class="num-b">2</span>L'entreprise est-elle active, et depuis quand&nbsp;?</h2>
+    <p>Le répertoire Sirene de l'INSEE indique si l'entreprise est active, sa date de création, sa forme juridique et sa tranche d'effectif. Une entreprise très récente n'est pas suspecte en soi, mais elle n'a pas encore d'historique : ses avis en ligne portent forcément sur peu de chantiers.</p>
+    <h2><span class="num-b">3</span>Les comptes</h2>
+    <p>Les sociétés déposent leurs comptes au greffe ; les plus petites peuvent demander qu'ils restent confidentiels. Quand ils sont publiés, le résultat net et les capitaux propres donnent une idée de la solidité : des capitaux propres négatifs signifient que les dettes dépassent ce que possède l'entreprise. Les entrepreneurs individuels ne publient pas de comptes.</p>
+    <h2><span class="num-b">4</span>L'assurance décennale</h2>
+    <p>Elle couvre pendant dix ans les dommages qui compromettent la solidité de l'ouvrage. Elle est obligatoire pour les travaux de construction, et le devis comme la facture doivent indiquer l'assureur et la zone couverte. Aucune base publique ne la recense : demandez l'attestation, et appelez l'assureur en cas de doute.</p>
+    <Fragment set:html={assuranceBlock()} />
+    <h2><span class="num-b">5</span>L'acompte et le délai de rétractation</h2>
+    <p>Aucun texte ne fixe de plafond général à l'acompte d'un chantier : c'est le devis signé qui fait foi. Après un démarchage à domicile ou un contrat signé hors de l'entreprise, vous disposez de 14 jours pour vous rétracter, et aucun paiement ne peut être exigé avant 7 jours. Une demande d'acompte élevée, surtout de la part d'une entreprise qui présente un point de vigilance, mérite une explication écrite.</p>
+    <h2>Et la qualification RGE&nbsp;?</h2>
+    <p>Elle ne compte que si vous voulez une aide publique à la rénovation énergétique (MaPrimeRénov', éco-prêt à taux zéro, primes CEE) : l'entreprise doit alors être qualifiée RGE pour les travaux du devis, à la date de sa signature. Pour d'autres travaux, elle n'est pas nécessaire.</p>
+    <Fragment set:html={devisBlock()} />
+    <p class="src">Pour un litige : la direction départementale de la protection des populations (DDPP) et le site signal.conso.gouv.fr. Pour les aides et un conseil gratuit : france-renov.gouv.fr.</p>
+  </div></div></section>
+</Base>

@@ -1,4 +1,4 @@
-// Mise en forme des nombres, des dates et des lieux, partagée par toutes les pages.
+// Mise en forme des nombres et des dates, partagée par toutes les pages.
 export const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const nb = (s) => s.replace(/[   ]/g, " ");
 export const int = (v) => nb(Math.round(v).toLocaleString("fr-FR"));
@@ -13,28 +13,5 @@ export function eur(v) {
 export const plural = (n, s, p = s + "s") => (n > 1 ? p : s);
 const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 export const dateFr = (s) => { if (!s) return ""; const [y, m, d] = s.split("-").map(Number); return `${d === 1 ? "1er" : d} ${MONTHS[m - 1]} ${y}`; };
-export const monthFr = (s) => { if (!s) return ""; const [y, m] = s.split("-").map(Number); return `${MONTHS[m - 1]} ${y}`; };
 export const year = (s) => (s ? s.slice(0, 4) : "");
 
-// « dans le Cantal », « en Ille-et-Vilaine », « à Paris »
-const A_DEPS = new Set(["75", "974", "976", "975", "977", "978"]);
-export function inDep(d) {
-  if (A_DEPS.has(d.code)) return "à " + d.nom;
-  return ({ 2: "dans le ", 4: "dans les ", 5: "dans l'" }[d.tl] ?? "en ") + d.nom;
-}
-// « à Aurillac », « dans le 15e arrondissement de Paris »
-export function inCity(c) {
-  const m = c.nom.match(/^(Paris|Lyon|Marseille) (\d+)(e|er)$/);
-  return m ? `dans le ${m[2]}${m[3]} arrondissement de ${m[1]}` : "à " + c.nom;
-}
-
-export const ficheUrl = (e) => `/entreprise/${e.slug}/`;
-// Adresse d'une fiche RGE calculée dans le navigateur : même règle que ent_slug() dans scripts/prepare_data.py
-const slugify = (s) => s.normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-export const entSlug = (nom, ville, siren) => [slugify(nom).slice(0, 60).replace(/^-+|-+$/g, ""), slugify(ville), siren].filter(Boolean).join("-");
-// Vérification à la demande d'un artisan qui n'a pas de fiche (hors liste RGE)
-export const artisanUrl = (siren) => `/artisan/?siren=${siren}`;
-export const artisanSearchUrl = (q) => `/artisan/?q=${encodeURIComponent(q)}`;
-export const communeUrl = (c) => `/artisans-rge/${c.slug}/`;
-export const depUrl = (d) => `/departement/${d.slug}/`;
-export const travauxUrl = (t, d) => (d ? `/travaux/${t}/${d.slug}/` : `/travaux/${t}/`);

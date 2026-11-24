@@ -1,0 +1,12 @@
+---
+// Résultats de recherche : tout est calculé dans le navigateur (src/scripts/search.js), à partir de ?q=…
+import Base from "../../layouts/Base.astro";
+---
+<Base title="Recherche" description="Les artisans du bâtiment trouvés dans l'annuaire officiel des entreprises." page="recherche" noindex>
+  <section class="block rs"><div class="wrap">
+    <div id="rs-head"></div>
+    <div id="rs-out" aria-live="polite"><div class="rs-msg"><p class="rs-wait">Recherche en cours…</p></div></div>
+    <noscript><div class="rs-msg"><p>La recherche a besoin de JavaScript pour interroger l'annuaire officiel des entreprises.</p></div></noscript>
+  </div></section>
+</Base>
+<script>import "../../scripts/search.js";</script>

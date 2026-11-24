@@ -1,9 +1,0 @@
----
-import Base from "../../layouts/Base.astro";
-import { renderVerifier } from "../../lib/core.js";
-import { load } from "../../lib/data.js";
-const s = load();
----
-<Base title="Vérifier un artisan avant de signer un devis" description="Qualification RGE, procédures collectives, ancienneté, comptes et assurance décennale : les cinq vérifications à faire avant de verser un acompte." page="verifier">
-  <Fragment set:html={renderVerifier({ nat: s.nat })} />
-</Base>

@@ -8,16 +8,8 @@
 import { esc } from "./fmt.js";
 
 export const PARTENAIRES = {
-  // Demande de devis (rémunéré au contact transmis) : fiches, communes, départements, travaux, accueil, guide, prix
+  // Demande de devis (rémunéré au contact transmis) : fiches et guide « Avant de signer »
   devis: { enabled: false, partner: "", url: "" },
-  // Vente de matériaux (rémunéré à la commande) : sous le tableau de chaque famille dans les articles « Prix des matériaux »
-  materiaux: {
-    bois: { enabled: false, partner: "", url: "", quoi: "bois, panneaux et menuiseries" },
-    finitions: { enabled: false, partner: "", url: "", quoi: "peinture, carrelage et enduits" },
-    "gros-oeuvre": { enabled: false, partner: "", url: "", quoi: "ciment, béton et parpaings" },
-    toiture: { enabled: false, partner: "", url: "", quoi: "tuiles, fenêtres et vitrages" },
-    reseaux: { enabled: false, partner: "", url: "", quoi: "plomberie, chauffage et électricité" },
-  },
   // Assurance des travaux (dommages-ouvrage, protection juridique) : guide « Avant de signer », après l'assurance décennale
   assurance: { enabled: false, partner: "", url: "" },
 };
@@ -29,7 +21,6 @@ const on = (p) => p && p.enabled && p.url;
 export function actifs() {
   const l = [];
   if (on(PARTENAIRES.devis)) l.push([PARTENAIRES.devis.partner, "les demandes de devis transmises"]);
-  for (const p of Object.values(PARTENAIRES.materiaux)) if (on(p)) l.push([p.partner, "les commandes de matériaux"]);
   if (on(PARTENAIRES.assurance)) l.push([PARTENAIRES.assurance.partner, "les souscriptions d'assurance"]);
   return l.filter((x, i) => l.findIndex((y) => y[0] === x[0] && y[1] === x[1]) === i);
 }
@@ -49,16 +40,6 @@ export function devisBlock(what = "vos travaux") {
     titre: `Comparer plusieurs devis pour ${what}`,
     texte: `Décrivez votre projet sur ${esc(p.partner)} : des artisans de votre secteur vous recontactent. Vérifiez ensuite chacun d'eux ici avant de signer.`,
     bouton: "Demander des devis", emplacement: "Demande de devis",
-  });
-}
-
-export function materiauxBlock(famille) {
-  const p = PARTENAIRES.materiaux[famille];
-  if (!p) return "";
-  return encart(p, {
-    titre: `Acheter ${p.quoi}`,
-    texte: `Comparez les prix du moment chez ${esc(p.partner)}, livraison ou retrait en magasin.`,
-    bouton: "Voir les prix", emplacement: `Vente de matériaux (${p.quoi})`,
   });
 }
 

@@ -3,25 +3,21 @@ import "@fontsource-variable/bricolage-grotesque/opsz.css";
 import "@fontsource-variable/source-sans-3/wght.css";
 import "../styles/site.css";
 import { SITE_NAME, SITE_URL, INDEXABLE, CONTACT, ANALYTICS_TOKEN } from "../lib/site.js";
-import { load } from "../lib/data.js";
-import { dateFr } from "../lib/fmt.js";
 import fs from "node:fs";
 
 const { title, description, page, noindex = false, jsonld = null } = Astro.props;
-const { meta } = load();
 // image de partage : seulement si public/og.png a été produite (gabarit : scripts/og/og.html)
 const ogImage = SITE_URL && fs.existsSync("public/og.png") ? SITE_URL + "/og.png" : "";
 const canonical = SITE_URL ? SITE_URL + Astro.url.pathname : null;
 const fullTitle = page === "home" ? title : `${title} | ${SITE_NAME}`;
-const nav = [["travaux", "/travaux/", "Travaux"], ["prix", "/prix-des-materiaux/", "Prix des matériaux"], ["verifier", "/verifier-un-artisan/", "Avant de signer"], ["about", "/a-propos/", "À propos"]];
-const search = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+const nav = [["avant", "/avant-de-signer/", "Avant de signer"], ["about", "/a-propos/", "À propos"]];
+const home = page === "home";
 ---
 <!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="color-scheme" content="light dark" />
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
   {(!INDEXABLE || noindex) && <meta name="robots" content="noindex" />}
@@ -36,43 +32,42 @@ const search = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stro
   {ogImage && <meta property="og:image:height" content="630" />}
   <meta property="og:locale" content="fr_FR" />
   <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
-  <meta name="theme-color" content="#1b2f5e" />
+  <meta name="theme-color" content="#2F4BD8" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
 </head>
 <body data-page={page}>
   <a class="skip" href="#app">Aller au contenu</a>
-  <header class="top">
-    <div class="wrap">
-      <a class="logo" href="/" aria-label="Artisan Arena, accueil"><i aria-hidden="true"></i><span>Artisan</span><span class="ar">Arena</span></a>
-      <button type="button" class="nav" id="findBtn" aria-controls="sov" aria-label="Rechercher une entreprise ou une commune"><Fragment set:html={search} /><span class="hide-m">Rechercher</span></button>
-      {nav.map(([k, href, label]) => <a class="nav hide-m" href={href} aria-current={k === page ? "page" : undefined}>{label}</a>)}
-      <button type="button" class="nav burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="menu"><svg class="i-b" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="i-x" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <header class:list={["top", { "top-home": home }]}>
+    <div class="wrap top-in">
+      <a class="logo" href="/" aria-label="Artisan Arena, accueil">
+        <span class="logo-i" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M6 10v10h12V10"/></svg></span>
+        <span class="logo-t">Artisan</span><span class="logo-ar">Arena</span>
+      </a>
+      {!home && (
+        <form class="top-search" role="search" action="/recherche/" method="get">
+          <label for="rs-q" class="sr">Nom, métier ou ville</label>
+          <input id="rs-q" name="q" type="search" autocomplete="off" enterkeyhint="search" placeholder="plombier Aurillac, Martin couvreur…" />
+          <button type="submit" class="btn dark">Trouver</button>
+        </form>
+      )}
+      <nav class="top-nav" aria-label="Menu principal">
+        {nav.map(([k, href, label]) => <a href={href} aria-current={k === page ? "page" : undefined}>{label}</a>)}
+      </nav>
     </div>
   </header>
-  <nav id="menu" class="menu" aria-label="Menu" hidden>
-    <a href="/">Accueil</a>
-    <button type="button" id="menuFind">Rechercher une entreprise</button>
-    <a href="/travaux/">Les travaux</a>
-    <a href="/prix-des-materiaux/">Prix des matériaux</a>
-    <a href="/verifier-un-artisan/">Avant de signer</a>
-    <a href="/a-propos/">À propos</a>
-  </nav>
   <main id="app" tabindex="-1"><slot /></main>
-  <aside class="fam" aria-label="Les sites Arena">
+  <footer class="foot">
     <div class="wrap">
-      <span class="t">Les sites Arena</span>
-      <a href="https://ehpadarena.fr/"><b>EHPAD Arena</b><span> · le prix des EHPAD</span></a>
-      <a href="https://argilearena.fr/"><b>Argile Arena</b><span> · les fissures et les sols argileux</span></a>
-      <a href="https://eauarena.fr/"><b>Eau Arena</b><span> · qualité de l'eau du robinet</span></a>
-      <a href="https://scolarena.fr/"><b>Scol Arena</b><span> · collèges et lycées</span></a>
-    </div>
-  </aside>
-  <footer>
-    <div class="wrap">
-      <nav><a href="/">Accueil</a><a href="/travaux/">Les travaux</a><a href="/prix-des-materiaux/">Prix des matériaux</a><a href="/verifier-un-artisan/">Avant de signer</a><a href="/a-propos/">À propos</a><a href="/mentions-legales/">Mentions légales</a><a href="/confidentialite/">Confidentialité</a></nav>
-      <p>Qualifications : ADEME, liste des entreprises RGE ({dateFr(meta.rge)}). Procédures collectives : BODACC. Entreprises : répertoire Sirene de l'INSEE. Comptes : ratios financiers INPI. Prix des matériaux : INSEE. Données recalculées le {dateFr(meta.built)}.</p>
-      <p>Aucune inscription, aucun cookie, jamais de mise en avant payée par une entreprise. Contact : <span class="sel">{CONTACT}</span></p>
+      <div class="foot-cols">
+        <div>
+          <a class="logo" href="/"><span class="logo-i" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M6 10v10h12V10"/></svg></span><span class="logo-t">Artisan</span><span class="logo-ar">Arena</span></a>
+          <p>Juste le bon artisan près de chez vous. Tous les artisans du bâtiment, d'après l'annuaire officiel des entreprises, avec leur ancienneté, leurs procédures collectives et leurs comptes.</p>
+        </div>
+        <nav aria-label="Pied de page"><a href="/">Rechercher</a><a href="/avant-de-signer/">Avant de signer</a><a href="/a-propos/">À propos</a><a href="/mentions-legales/">Mentions légales</a><a href="/confidentialite/">Confidentialité</a></nav>
+      </div>
+      <p class="foot-src">Données publiques lues en direct : Annuaire des entreprises (INSEE, Sirene), BODACC, INPI, ADEME. Aucune inscription, aucun cookie, aucun classement payé. Contact : <span class="sel">{CONTACT}</span></p>
+      <p class="foot-fam">Les sites Arena : <a href="https://ehpadarena.fr/">EHPAD Arena</a> · <a href="https://argilearena.fr/">Argile Arena</a> · <a href="https://eauarena.fr/">Eau Arena</a> · <a href="https://scolarena.fr/">Scol Arena</a></p>
     </div>
   </footer>
   <script src="../scripts/app.js"></script>

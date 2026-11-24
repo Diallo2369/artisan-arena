@@ -1,9 +1,0 @@
----
-import Base from "../../layouts/Base.astro";
-import { renderTravauxHub } from "../../lib/core.js";
-import { load } from "../../lib/data.js";
-const s = load();
----
-<Base title="Les entreprises RGE par type de travaux" description="Pompe à chaleur, isolation, fenêtres, photovoltaïque… les entreprises qualifiées RGE pour chaque type de travaux, vérifiées une par une." page="travaux">
-  <Fragment set:html={renderTravauxHub({ nat: s.nat })} />
-</Base>

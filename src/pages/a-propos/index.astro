@@ -1,10 +1,56 @@
 ---
 import Base from "../../layouts/Base.astro";
-import { renderAbout } from "../../lib/core.js";
-import { load } from "../../lib/data.js";
 import { CONTACT } from "../../lib/site.js";
-const s = load();
+const DG = "https://www.data.gouv.fr/fr/datasets/";
+const SRC = [
+  ["Entreprises", "Annuaire des entreprises", "INSEE et DINUM", "Le nom, l'adresse, le métier déclaré, la date de création et l'état de chaque entreprise, d'après le répertoire Sirene. C'est sur lui que porte la recherche.", "https://annuaire-entreprises.data.gouv.fr/"],
+  ["Procédures", "BODACC", "Direction de l'information légale et administrative", "Les jugements de sauvegarde, de redressement, de liquidation judiciaire et de clôture, publiés depuis 2008.", DG + "bodacc/"],
+  ["Comptes", "INPI", "Institut national de la propriété industrielle", "Les ratios financiers calculés sur les comptes annuels déposés et publiés.", DG + "ratios-financiers-bce-inpi/"],
+  ["RGE", "ADEME", "Agence de la transition écologique", "L'historique des qualifications RGE depuis 2014.", "https://data.ademe.fr/datasets/historique-rge"],
+];
 ---
-<Base title="À propos" description="Pourquoi Artisan Arena, d'où viennent les qualifications RGE, les procédures collectives et les comptes, et comment les vérifications sont faites." page="about">
-  <Fragment set:html={renderAbout({ contact: CONTACT, nat: s.nat, meta: s.meta })} />
+<Base title="À propos" description="Pourquoi Artisan Arena, d'où viennent les données et comment la recherche et les vérifications sont faites." page="about">
+  <section class="page-h"><div class="wrap">
+    <p class="kicker">À propos</p>
+    <h1>Juste le bon artisan, sans classement payé</h1>
+    <p class="lede">Pourquoi ce site, d'où viennent les données et comment la recherche est faite.</p>
+  </div></section>
+  <section class="block"><div class="wrap"><div class="prose">
+    <h2 id="pourquoi">Pourquoi ce site</h2>
+    <p>Les annuaires d'artisans classent souvent ceux qui paient un abonnement. Artisan Arena cherche dans l'annuaire officiel des entreprises : tous les artisans du bâtiment y sont, et aucun ne peut payer pour passer devant les autres.</p>
+    <p>Sur la fiche de chaque artisan, on voit aussi ce qu'on vérifie rarement avant de verser un acompte : depuis quand l'entreprise existe, si elle fait l'objet d'une procédure collective et ce que disent ses comptes. Ces informations sont publiques, mais dispersées sur plusieurs sites officiels.</p>
+    <h2 id="recherche">Comment marche la recherche</h2>
+    <p>Tapez un nom, un métier, une ville, un code postal ou un département, dans n'importe quel ordre. Le site reconnaît le métier (« plombier », « couvreur », « pompe à chaleur »…) et le lieu, puis interroge l'annuaire officiel :</p>
+    <ul>
+      <li>avec un lieu et sans nom, il cherche les entreprises du métier autour de ce lieu, dans un rayon de 10 km par défaut, et les classe de la plus proche à la plus éloignée ;</li>
+      <li>avec un nom, il cherche ce nom parmi les entreprises du bâtiment, dans le département indiqué.</li>
+    </ul>
+    <p>Le métier vient du code d'activité que l'entreprise a déclaré à l'INSEE. Une entreprise qui fait aussi d'autres travaux que son activité principale peut donc manquer dans une recherche par métier : cherchez-la par son nom.</p>
+    <h2 id="sources">D'où viennent les données</h2>
+    <ul class="srcs">{SRC.map((x) => <li><span class="s-k">{x[0]}</span><div><b>{x[1]}</b> <small>{x[2]}</small><p>{x[3]}</p><p><a href={x[4]} target="_blank" rel="noopener">Voir la source ↗</a></p></div></li>)}</ul>
+    <p class="src">Données publiques, lues en direct à chaque recherche et à chaque fiche, et réutilisées sous Licence Ouverte, sans modification.</p>
+    <h2 id="verifications">Les vérifications de la fiche</h2>
+    <p>Chaque vérification est verte, jaune (point de vigilance), rouge (alerte) ou grise (pas de donnée).</p>
+    <ul>
+      <li><b>Procédures collectives</b> : rouge si une sauvegarde, un redressement ou une liquidation judiciaire est en cours ; jaune si un plan est en cours d'exécution ou si une procédure passée a été clôturée.</li>
+      <li><b>Entreprise</b> : rouge si elle est cessée au répertoire Sirene ; jaune si elle a été créée il y a moins de deux ans.</li>
+      <li><b>Comptes</b> : jaune si le dernier exercice publié, clos il y a moins de 30 mois, montre une perte ou des capitaux propres négatifs ; gris si les comptes sont confidentiels, anciens ou absents.</li>
+      <li><b>Qualification RGE</b> : pour information, utile seulement pour une aide à la rénovation énergétique.</li>
+    </ul>
+    <h2 id="limites">Ce que le site ne dit pas</h2>
+    <ul>
+      <li>La qualité du travail : aucune base publique ne la mesure. Lisez les avis, demandez des références de chantiers.</li>
+      <li>L'assurance décennale : aucune base publique ne la recense. Demandez l'attestation.</li>
+      <li>Les difficultés non publiées : une entreprise peut être en difficulté sans procédure collective. Une fiche verte n'est pas une garantie.</li>
+    </ul>
+    <h2 id="engagements">Nos engagements</h2>
+    <ul>
+      <li>Gratuit et sans inscription.</li>
+      <li>Indépendant : aucune entreprise ne peut payer pour être mise en avant, modifier sa fiche ou effacer une procédure publiée.</li>
+      <li>Sans cookie.</li>
+    </ul>
+    <h2 id="erreur">Signaler une erreur</h2>
+    <p>Écrivez-nous en précisant le numéro SIREN. Si l'erreur vient de la source (une adresse, un jugement, une activité déclarée), nous vous indiquons à qui vous adresser : l'INSEE, le greffe du tribunal ou l'organisme de qualification.</p>
+    <p><a class="btn" href={`mailto:${CONTACT}?subject=${encodeURIComponent("Erreur sur Artisan Arena")}`}>Écrire à {CONTACT}</a></p>
+  </div></div></section>
 </Base>

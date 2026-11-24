@@ -1,18 +1,16 @@
-# Construit et publie le site sur GitHub Pages.
+# Construit et publie le site sur GitHub Pages :
 # - à chaque envoi sur la branche main ;
-# - chaque lundi à 5 h 37 UTC, pour reprendre les nouvelles qualifications, les nouveaux jugements et les nouveaux comptes ;
 # - à la demande, depuis l'onglet Actions.
+# Pas de reconstruction programmée : les données (annuaire, BODACC, INPI, ADEME) sont lues en direct par le navigateur.
 name: Construire et publier
 
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: "37 5 * * 1"
   workflow_dispatch:
 
 permissions:
-  contents: write # pour enregistrer les chiffres figés des articles « Prix des matériaux »
+  contents: read
   pages: write
   id-token: write
 
@@ -23,48 +21,22 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 15
     env:
       # Adresse définitive du site. NOINDEX=1 : publié mais fermé à Google tant que le site est en relecture.
       SITE_URL: ${{ vars.SITE_URL || 'https://artisanarena.fr' }}
       NOINDEX: ${{ vars.NOINDEX || '1' }}
       CF_BEACON: ${{ vars.CF_BEACON || '' }}
-      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
       - name: Dépendances
-        run: |
-          npm ci
-          pip install pyarrow
-      - name: Fichiers officiels en cache
-        uses: actions/cache@v4
-        with:
-          path: data/raw
-          key: raw-${{ github.run_id }}
-          restore-keys: raw-
-      - name: Télécharger les données (ADEME, Sirene, BODACC, INPI, INSEE)
-        run: npm run data:fetch
-      - name: Préparer les données
-        run: npm run data:prepare
-      - name: Construire le site (avec contrôle des données)
+        run: npm ci
+      - name: Construire le site (avec test de la recherche)
         run: npm run build
-      # Un nouveau mois publié par l'INSEE donne un nouvel instantané data/prix/AAAA-MM.json : on le garde dans le dépôt,
-      # pour que l'article de ce mois ne change plus. (Un envoi fait avec GITHUB_TOKEN ne relance pas ce workflow.)
-      - name: Enregistrer les nouveaux mois des prix des matériaux
-        run: |
-          git add data/prix
-          if git diff --cached --quiet; then echo "Aucun nouveau mois"; exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Prix des matériaux : $(git diff --cached --name-only | xargs -n1 basename | sed 's/.json//' | tr '\n' ' ')"
-          git pull --rebase origin main && git push origin HEAD:main
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

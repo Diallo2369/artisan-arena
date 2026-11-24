@@ -3,16 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Cet artisan est-il solide ? Procédures collectives, ancienneté, comptes publiés et qualification RGE, entreprise par entreprise.",
+  "description": "Juste le bon artisan près de chez vous : recherche de tous les artisans du bâtiment dans l'annuaire officiel des entreprises, avec ancienneté, procédures collectives et comptes.",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "data:fetch": "python3 scripts/fetch_data.py",
-    "data:prepare": "python3 scripts/prepare_data.py && python3 scripts/prix_snapshots.py",
-    "data:check": "node scripts/check_data.mjs",
-    "dev": "astro dev",
-    "build": "node scripts/ensure_data.mjs && node scripts/check_data.mjs && node scripts/check_live.mjs && astro build && node scripts/postbuild.mjs",
+    "lieux": "node scripts/communes.mjs",
+    "test": "node scripts/communes.mjs && node scripts/test_parse.mjs",
+    "dev": "node scripts/communes.mjs && astro dev",
+    "build": "node scripts/communes.mjs && node scripts/test_parse.mjs && astro build && node scripts/postbuild.mjs",
     "preview": "astro preview"
   },
   "dependencies": {

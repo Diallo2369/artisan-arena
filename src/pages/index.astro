@@ -1,19 +1,51 @@
 ---
 import Base from "../layouts/Base.astro";
-import { renderHome, seo } from "../lib/core.js";
-import { load } from "../lib/data.js";
-import REG from "@etalab/decoupage-administratif/data/regions.json";
-import DEP from "@etalab/decoupage-administratif/data/departements.json";
-const s = load();
-const cities = Object.values(s.communes).filter((c) => !c.parent).sort((a, b) => b.pop - a.pop).slice(0, 24);
-// départements regroupés par région ; DROM et collectivités d'outre-mer ensemble
-const regName = Object.fromEntries(REG.map((r) => [r.code, r.nom]));
-const depReg = Object.fromEntries(DEP.map((d) => [d.code, d.zone === "metro" ? regName[d.region] : "Outre-mer"]));
-const groups = {};
-for (const d of Object.values(s.deps).sort((a, b) => a.code.localeCompare(b.code))) (groups[depReg[d.code] || "Outre-mer"] ||= []).push(d);
-const regions = Object.entries(groups).sort((a, b) => (a[0] === "Outre-mer") - (b[0] === "Outre-mer") || a[0].localeCompare(b[0], "fr"));
-// exemple de recherche : une entreprise sans point de vigilance, plusieurs fois qualifiée, dans une grande ville
-const sample = Object.values(s.ent).filter((e) => e.v === 0 && e.q.length >= 3 && !e.ni && e.since < "2016").sort((a, b) => a.id.localeCompare(b.id))[0];
-const m = seo("home");
+const EX = ["plombier Aurillac", "Martin couvreur", "électricien 15", "pompe à chaleur Clermont-Ferrand"];
+const href = (q: string) => "/recherche/?" + new URLSearchParams({ q });
 ---
-<Base title={m.title} description={m.desc} page="home"><Fragment set:html={renderHome({ nat: s.nat, cities, regions, sample })} /></Base>
+<Base title="Artisan Arena : juste le bon artisan près de chez vous" description="Trouvez un artisan du bâtiment par son nom, son métier ou sa ville, d'après l'annuaire officiel des entreprises, avec son ancienneté, ses procédures collectives et ses comptes. Gratuit, sans inscription, aucun classement payé." page="home">
+  <section class="hero"><div class="wrap">
+    <div class="hero-box">
+      <svg class="hero-sun" width="420" height="420" viewBox="0 0 420 420" aria-hidden="true"><circle cx="210" cy="210" r="210" /></svg>
+      <svg class="hero-dot" width="160" height="160" viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="80" /></svg>
+      <div class="hero-in">
+        <p class="hero-k">Tous les artisans du bâtiment, d'après l'annuaire officiel</p>
+        <h1>Juste le <span class="hl">bon artisan</span> près de chez vous</h1>
+        <form class="hero-search" role="search" action="/recherche/" method="get">
+          <label for="q" class="sr">Nom, métier ou ville</label>
+          <div class="hs-field">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="q" name="q" type="search" autocomplete="off" enterkeyhint="search" placeholder="plombier Aurillac" required />
+          </div>
+          <button type="submit" class="btn dark big">Trouver</button>
+          <button type="button" class="hs-geo" data-geo><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Autour de ma position</button>
+        </form>
+        <p class="hero-ex"><span>Essayez :</span>{EX.map((q) => <a href={href(q)}>{q}</a>)}</p>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="block"><div class="wrap">
+    <div class="pillars">
+      <div class="pillar">
+        <span class="pi p1" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+        <h2>Tous les artisans</h2>
+        <p>Un nom, un métier, une ville, ou les trois : la recherche porte sur l'annuaire officiel des entreprises, pas sur une liste d'abonnés.</p>
+      </div>
+      <div class="pillar">
+        <span class="pi p2" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <h2>Sa santé, en clair</h2>
+        <p>Ancienneté, procédures collectives, comptes publiés : ce qu'il faut savoir avant de verser un acompte.</p>
+      </div>
+      <div class="pillar">
+        <span class="pi p3" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg></span>
+        <h2>Aucun classement payé</h2>
+        <p>Aucun artisan ne paie pour apparaître ou passer devant les autres.</p>
+      </div>
+    </div>
+    <div class="teaser">
+      <div><h2>Avant de signer un devis</h2><p>Assurance décennale, acompte, délai de rétractation : les bons réflexes, en cinq minutes.</p></div>
+      <a class="btn" href="/avant-de-signer/">Lire le guide</a>
+    </div>
+  </div></section>
+</Base>
