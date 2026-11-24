@@ -1,6 +1,5 @@
 ---
-import "@fontsource-variable/bricolage-grotesque/opsz.css";
-import "@fontsource-variable/source-sans-3/wght.css";
+import "@fontsource-variable/ibm-plex-sans/index.css";
 import "../styles/site.css";
 import { SITE_NAME, SITE_URL, INDEXABLE, CONTACT, ANALYTICS_TOKEN } from "../lib/site.js";
 import fs from "node:fs";
@@ -32,7 +31,7 @@ const home = page === "home";
   {ogImage && <meta property="og:image:height" content="630" />}
   <meta property="og:locale" content="fr_FR" />
   <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
-  <meta name="theme-color" content="#2F4BD8" />
+  <meta name="theme-color" content="#2342C8" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   {jsonld && <script type="application/ld+json" set:html={JSON.stringify(jsonld)} />}
 </head>
