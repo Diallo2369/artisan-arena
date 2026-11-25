@@ -232,8 +232,13 @@ th{font-weight:600;color:var(--muted);font-size:.85rem;background:var(--surface-
 .foot-cols>div{max-width:520px}
 .foot nav{display:flex;flex-direction:column;gap:8px}
 .foot nav a{text-decoration:none;font-weight:500}
-.foot-src,.foot-fam{margin-top:24px;font-size:.88rem;border-top:1px solid #2C44A8;padding-top:18px}
-.foot-fam{margin-top:0;border-top:0;padding-top:8px}
+.foot-src{margin-top:24px;font-size:.88rem;border-top:1px solid #2C44A8;padding-top:18px}
+.foot-fam{margin-top:18px;border-top:1px solid #2C44A8;padding-top:18px;display:flex;flex-wrap:wrap;gap:8px 28px;align-items:baseline}
+.foot-fam .t{font-size:.88rem;font-weight:700;color:#C9D2F0;width:100%}
+.foot-fam a{text-decoration:none;font-size:.95rem;padding:2px 0}
+.foot-fam a span{color:#C9D2F0}
+.foot-fam a:hover{background:none;color:#fff}.foot-fam a:hover b{text-decoration:underline}
+@media (max-width:720px){.foot-fam{flex-direction:column;gap:6px}}
 
 /* ---------- petits écrans ---------- */
 @media (max-width:1100px){.hero-box::before,.hero-box::after{display:none}}
