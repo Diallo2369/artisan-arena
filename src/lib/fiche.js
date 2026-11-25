@@ -119,6 +119,11 @@ export function renderFiche({ e, devis = "", autres = "" }) {
     : age != null && age < 24 && si.etat !== "C" ? `<div class="fh-note"><b>Entreprise récente.</b> Elle a peu d'historique : peu de chantiers derrière elle${si.pp ? "" : ", et peu ou pas de comptes publiés"}. Demandez des références de chantiers récents.</div>`
     : `<p class="fh-verdict">${summary(e, cs)}</p>`;
 
+  // coordonnées : absentes des registres publics, on renvoie vers une recherche web et PagesJaunes (sauf entreprise non diffusible)
+  const ville = e.ville || "", ext = 'target="_blank" rel="noopener nofollow"';
+  const contact = si.etat !== "C" && !e.nom.startsWith("Entrepreneur individuel")
+    ? `<div class="fh-contact"><p>Téléphone et e-mail ne figurent pas dans les registres publics.</p><div><a class="btn" href="https://www.google.com/search?${new URLSearchParams({ q: `${e.nom} ${ville}` })}" ${ext}>Trouver ses coordonnées</a><a class="btn ghost" href="https://www.pagesjaunes.fr/annuaire/chercherlespros?${new URLSearchParams({ quoiqui: e.nom, ou: ville })}" ${ext}>Voir sur PagesJaunes</a></div></div>` : "";
+
   return `<section class="fh"><div class="wrap">
   <div class="fh-card">
     <div class="fh-id">
@@ -126,6 +131,7 @@ export function renderFiche({ e, devis = "", autres = "" }) {
       <h1>${esc(e.nom)}</h1>
       <p class="fh-adr">${esc([est.adr, est.cp].filter(Boolean).join(", "))}</p>
       <p class="fh-sub">SIREN ${e.id.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")}${si.cjl ? ` · ${esc(si.cjl)}` : ""}${si.eff ? ` · ${esc(si.eff)}` : ""}</p>
+      ${contact}
     </div>
     ${ageBlock}
   </div>
