@@ -21,6 +21,9 @@ async function main() {
   // historique RGE : facultatif, la fiche s'affiche même si l'ADEME ne répond pas
   const hq = (sort) => get(`${API.historique}?${qs({ qs: `siret:${siren}*`, size: 1, sort, select: "siret,nom_qualification,lien_date_debut,lien_date_fin,organisme" })}`).then((j) => (j.results || [])[0] || null);
   const histP = Promise.all([hq("-lien_date_fin"), hq("lien_date_debut")]).then(([last, first]) => ({ last, first })).catch(() => "indisponible");
+  // coordonnées publiées par l'annuaire RGE (ADEME) : facultatif, et seulement s'il y a un téléphone
+  const coordP = get(`${API.rge}?${qs({ qs: `siret:${siren}*`, size: 50, select: "siret,telephone,email,site_internet" })}`)
+    .then((j) => (j.results || []).filter((r) => r.telephone)).catch(() => []);
   let ue, bod, rat;
   try {
     [ue, bod, rat] = await Promise.all([
@@ -33,11 +36,13 @@ async function main() {
   }
   if (!ue) return msg(`<h1 class="rs-h">Entreprise introuvable</h1><p>Aucune entreprise ne porte le numéro SIREN ${siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")} au répertoire Sirene. Vérifiez le numéro inscrit sur le devis.</p>`);
   const e = fromLive(ue, bod, rat, new Date(), await histP);
+  const rs = await coordP, r = rs.find((x) => x.siret === ue.siege?.siret) || rs[0];
+  const coord = r ? { tel: r.telephone, email: r.email || "", site: r.site_internet || "" } : null;
   document.title = `${e.nom}${e.ville ? ` (${e.ville})` : ""} | Artisan Arena`;
   // lien vers les autres artisans du même métier autour
   const m = METIERS.find((x) => x.codes.includes(e.si.naf));
   const autres = m && e.ville ? `<p class="autres"><a class="btn ghost" href="/recherche/?${qs({ q: `${m.mots[0]} ${e.ville}` })}">Voir d'autres ${esc(m.qui)} près ${/^[AEIOUYÉÈH]/i.test(e.ville) ? "d'" : "de "}${esc(e.ville)}</a></p>` : "";
   const other = e.si.section && !["F", "N"].includes(e.si.section) ? `<p class="fh-other">Activité principale déclarée : ${esc(e.si.nafl || e.si.naf)}. Ce n'est pas une entreprise du bâtiment.</p>` : "";
-  out.innerHTML = renderFiche({ e, devis: $("#fp-devis").innerHTML, autres }).replace('<div class="checks">', other + '<div class="checks">');
+  out.innerHTML = renderFiche({ e, devis: $("#fp-devis").innerHTML, autres, coord }).replace('<div class="checks">', other + '<div class="checks">');
 }
 main();

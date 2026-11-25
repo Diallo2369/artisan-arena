@@ -82,7 +82,7 @@ export const beforeList = () => `<ol class="todo">${BEFORE.map(([b, s]) => `<li>
 const monthsSince = (iso, today = new Date()) => (iso ? monthsBetween(isoDate(iso), today) : null);
 export const ageTxt = (m) => (m == null ? "" : m < 1 ? "moins d'un mois" : m < 24 ? `${m} mois` : `${Math.floor(m / 12)} ans`);
 
-export function renderFiche({ e, devis = "", autres = "" }) {
+export function renderFiche({ e, devis = "", autres = "", coord = null }) {
   const cs = checks(e);
   const si = e.si || {};
   const age = monthsSince(si.cree);
@@ -119,10 +119,15 @@ export function renderFiche({ e, devis = "", autres = "" }) {
     : age != null && age < 24 && si.etat !== "C" ? `<div class="fh-note"><b>Entreprise récente.</b> Elle a peu d'historique : peu de chantiers derrière elle${si.pp ? "" : ", et peu ou pas de comptes publiés"}. Demandez des références de chantiers récents.</div>`
     : `<p class="fh-verdict">${summary(e, cs)}</p>`;
 
-  // coordonnées : absentes des registres publics, on renvoie vers la recherche PagesJaunes (sauf entreprise non diffusible)
+  // coordonnées : l'annuaire RGE de l'ADEME les publie pour les entreprises RGE ; sinon, renvoi vers la recherche PagesJaunes.
+  // Rien pour une entreprise fermée ou non diffusible au répertoire Sirene.
   const ville = e.ville || "", ext = 'target="_blank" rel="noopener nofollow"';
-  const contact = si.etat !== "C" && !e.nom.startsWith("Entrepreneur individuel")
-    ? `<div class="fh-contact"><p>Téléphone et e-mail ne figurent pas dans les registres publics.</p><div><a class="btn" href="https://www.pagesjaunes.fr/annuaire/chercherlespros?${new URLSearchParams({ quoiqui: e.nom, ou: ville })}" ${ext}>Voir sur PagesJaunes</a></div></div>` : "";
+  const pj = (cls) => `<a class="btn${cls}" href="https://www.pagesjaunes.fr/annuaire/chercherlespros?${new URLSearchParams({ quoiqui: e.nom, ou: ville })}" ${ext}>Voir sur PagesJaunes</a>`;
+  const c = coord || {}, site = /^https?:\/\//i.test(c.site || "") ? c.site : c.site ? "http://" + c.site : "";
+  const contact = si.etat === "C" || e.nom.startsWith("Entrepreneur individuel") ? ""
+    : c.tel
+      ? `<div class="fh-contact"><ul class="fh-coord"><li><span>Téléphone</span><a href="tel:${esc(c.tel.replace(/[^\d+]/g, ""))}">${esc(c.tel)}</a></li>${c.email ? `<li><span>E-mail</span><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></li>` : ""}${site ? `<li><span>Site</span><a href="${esc(site)}" ${ext}>${esc(site.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, ""))}</a></li>` : ""}</ul><p>Coordonnées déclarées par l'entreprise à l'annuaire RGE de France Rénov' (ADEME).</p></div>`
+      : `<div class="fh-contact"><p>Téléphone et e-mail ne figurent pas dans les registres publics.</p><div>${pj("")}</div></div>`;
 
   return `<section class="fh"><div class="wrap">
   <div class="fh-card">
@@ -158,6 +163,7 @@ export const API = {
   near: "https://recherche-entreprises.api.gouv.fr/near_point",
   bodaccExport: "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/exports/json",
   historique: "https://data.ademe.fr/data-fair/api/v1/datasets/historique-rge/lines",
+  rge: "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines",
   bodacc: "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records",
   ratios: "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/ratios_inpi_bce/records",
 };
