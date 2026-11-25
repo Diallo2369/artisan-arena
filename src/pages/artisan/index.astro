@@ -3,7 +3,7 @@
 import Base from "../../layouts/Base.astro";
 import { devisBlock } from "../../lib/partenaires.js";
 ---
-<Base title="Fiche artisan" description="Ancienneté, procédures collectives, comptes et qualification RGE d'un artisan du bâtiment, lus en direct auprès des services publics." page="artisan" noindex>
+<Base title="Fiche artisan" description="La fiche d'un artisan du bâtiment près de chez vous, d'après l'annuaire officiel des entreprises." page="artisan" noindex>
   <div id="fp-out" aria-live="polite"><section class="block"><div class="wrap"><div class="rs-msg"><p class="rs-wait">Lecture de l'annuaire des entreprises, du BODACC et de l'INPI…</p></div></div></section></div>
   <template id="fp-devis"><Fragment set:html={devisBlock()} /></template>
   <noscript><section class="block"><div class="wrap"><div class="rs-msg"><p>Cette page a besoin de JavaScript pour interroger les services publics.</p></div></div></section></noscript>
