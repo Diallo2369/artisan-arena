@@ -23,10 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      # Adresse définitive du site. NOINDEX=1 : publié mais fermé à Google tant que le site est en relecture.
+      # Adresse définitive du site. Ouvert à Google par défaut ; variable du dépôt NOINDEX=1 pour le refermer.
       SITE_URL: ${{ vars.SITE_URL || 'https://artisanarena.fr' }}
-      NOINDEX: ${{ vars.NOINDEX || '1' }}
-      CF_BEACON: ${{ vars.CF_BEACON || '' }}
+      NOINDEX: ${{ vars.NOINDEX || '0' }}
+      # Jeton Cloudflare Web Analytics (public, il apparaît dans chaque page)
+      CF_BEACON: ${{ vars.CF_BEACON || '82cf5f05f13d401eb9151bdc6ab6d2cf' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
